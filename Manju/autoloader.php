@@ -7,3 +7,5 @@ spl_autoload_register(function($class){
         include $path;
     }
 });
+
+require_once __DIR__ . '/dist/rb.php';
