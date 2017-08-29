@@ -54,20 +54,9 @@ abstract class Bun extends SimpleModel{
      * @var bool 
      */
     protected $savetimestamps = false;
+    
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
+    //===============       Bun Properties        ===============//
 
     const MANJU_VERSION = '1.0.alpha1';
     const ACCEPTED_BEAN_NAMES = '/^[^0-9][a-z0-9]+$/';
@@ -82,11 +71,6 @@ abstract class Bun extends SimpleModel{
      */
     public static $beanlist = [];
 
-
-    
-    
-    
-    
     /**
      * @var OODBBean
      */
@@ -97,10 +81,45 @@ abstract class Bun extends SimpleModel{
      * Scallar typed properties converted from bean
      * @var $array
      */
-    protected $properties = [];
+    private $properties = [];
     
+    /**
+     * Converts data into $this->properties
+     * and send DB compatible data to the bean and then filter data on retrieve
+     * eg:
+     *          $product->price = 599.99;
+     *          on __set()
+     *          $this->properties['price'] = 599.99; // to reuse the data if needed __get() filter
+     *          $this->bean->price = "599.99";
+     *          $this->bean->price_phptype = "double";
+     *          on __get(); will filter data
+     *          $this->properties['price'] = floatval($this->bean->price)
+     *          return $this->properties['price']
+     *          for more advanced conversions use
+     *              protected function set_price($price){
+     *                  return $data_to_put_to_bean
+     *              }
+     *              protected function get_price($price_from_bean_and_converted){
+     *                  return $data_for_the_user;
+     *              }
+     */
+    private static $valid_scalar_types = [ "integer", "double", "boolean", "array", "object", "datetime"];
     
+    /**
+     * Passtru data to the bean
+     */
+    private static $ignore_scalar_types = [ "string", "NULL"];
     
+    /**
+     * Input nothing into the bean
+     */
+    private static $invalid_scalar_types = ["resource", "unknown type"];
+
+
+
+
+
+
     /**
      * Model Construct method
      */
@@ -109,13 +128,13 @@ abstract class Bun extends SimpleModel{
     
 
 
-    public function __construct($bean = null) {
+    final public function __construct($bean = null) {
         BeanHelper::$registered or new BeanHelper;
         self::$beanlist or $this->beanlist();
         isset(self::$beanlist[$this->beantype()])?:self::$beanlist[$this->beantype()] = get_called_class();
         $bean = is_null($bean)?false:$bean;
-        $this->configure();
         $this->initialize($bean);
+        $this->configure();
         
     }
     
@@ -210,19 +229,20 @@ abstract class Bun extends SimpleModel{
     public function open(){}
     public function update() {}
     public function after_update() {}
-    public function after_delete() {}
     public function delete() {}
+    public function after_delete() {}
     
     
-    public function __get($prop) {
+    
+    final public function __get($prop) {
         return $this->bean->$prop;
     }
 
-    public function __isset($key) {
+    final public function __isset($key) {
         return isset( $this->bean->$key );
     }
 
-    public function __set($prop, $value): void {
+    final public function __set($prop, $value): void {
         $this->bean->$prop = $value;
     }
 
@@ -231,11 +251,12 @@ abstract class Bun extends SimpleModel{
     }
 
     public function unbox() {
+        $this->bean or $this->initialize();
         return $this->bean;
     }
     
     
-    //=============== RedBean CRUD ===============//
+    //===============       RedBean CRUD        ===============//
     
     /**
      * Couples the bun to the bean
@@ -254,20 +275,17 @@ abstract class Bun extends SimpleModel{
      * @param OODBBean $bean
      * @return $this
      */
-    public function loadBean(OODBBean $bean): Bun{
+    final public function loadBean(OODBBean $bean): Bun{
         $this->initialize(false);
         $this->bean = $bean;
         return $this;
     }
 
-
-    
-    
     /**
      * Create a new empty bean
      * @return $this
      */
-    public function create(): Bun{
+    final public function create(): Bun{
         //prevents double Manju\Bun instance
         BeanHelper::$enabled = false;
         $this->bean = null;
@@ -285,7 +303,7 @@ abstract class Bun extends SimpleModel{
      * @param int $id id field of the bean
      * @return $this
      */
-    public function load(int $id = 0): Bun{
+    final public function load(int $id = 0): Bun{
         if(!$id) return $this->dispense ();
         //prevents double Manju\Bun instance
         BeanHelper::$enabled = false;
@@ -305,11 +323,12 @@ abstract class Bun extends SimpleModel{
      * @param bool $fresh Refresh the bean with saved data
      * @return $this
      */
-    public function store(bool $fresh = false): Bun{
+    final public function store(bool $fresh = false): Bun{
         if(!$this->bean or !$this->cansave) return $this;
-        $this->initialize(false);
+        $this->add_timestamps();
         R::store($this->bean);
         if($fresh) return $this->fresh ();
+        else $this->initialize(false);
         return $this;
     }
     
@@ -317,7 +336,7 @@ abstract class Bun extends SimpleModel{
      * Reloads data for the current bean from the database
      * @return $this
      */
-    public function fresh(): Bun{
+    final public function fresh(): Bun{
         $this->bean or $this->initialize ();
         return $this->load($this->id);
     }
@@ -326,11 +345,88 @@ abstract class Bun extends SimpleModel{
      * Removes a bean from the database
      * @return $this;
      */
-    public function trash(): Bun{
+    final public function trash(): Bun{
         if(!$this->bean) return $this;
         R::trash($this->bean);
         $this->bean = null;
         return $this;
     }
+    
+    //===============       Bun       ===============//
+    
+    /**
+     * Adds created_at and updated_at columns and their values
+     */
+    private function add_timestamps(){
+        if(!$this->savetimestamps) return;
+        $date = date(DateTime::DB);
+        //force load values as Manju\DateTime object
+        foreach (['created_at', 'updated_at'] as $prop){
+            $this->set_column_scalar_type($prop, 'datetime');
+        }
+        //save as valid sql datetime
+        if(!$this->created_at) $this->created_at = $date;
+        $this->updated_at = $date;
+        
+    }
+    
+    /**
+     * creates a column into the bean using the scalar_type_suffix and store the type if valid
+     * @param string $prop Property name
+     * @param string $type valid php scalar type or datetime (will creates a Manju\DateTime object)
+     */
+    protected function set_column_scalar_type(string $prop, string $type){
+        !$this->bean or $this->initialize();
+        if(!$this->scalar_type_conversion) return;
+        if(!in_array($type, self::$valid_scalar_types)) return;
+        $col = $prop . $this->scalar_type_suffix;
+        $this->$col = $type;
+    }
+    
+    /**
+     * Get the declared scalar type for the column $prop
+     * @param string $prop name of the column
+     * @return string|null
+     */
+    protected function get_column_scalar_type(string $prop){
+        if(!$this->scalar_type_conversion) return null;
+        $col = $prop.$this->scalar_type_suffix;
+        $val = $this->$col;
+        return $val;
+    }
+
+
+    /**
+    * Serialize and encode string to base 64 
+    * \Serializable Objects and arrays will be saved into that format into the database
+    * @param type $value
+    * @return string
+    */
+    public function b64serialize($value): string{
+        if(is_object($value)){
+            if(!($value instanceof \Serializable)){
+                $value = '';
+                return $value;
+            }
+        }
+        $value = serialize($value);
+        $value = base64_encode($value);
+        return $value;
+    }
+    
+    /**
+     * Unserialize a base 64 serialized string
+     * will return \Serializable Objects or array
+     * @param type $str
+     * @return array or object
+     */
+    public function b64unserialize(string $str){
+        $str = base64_decode($str);
+        $obj = unserialize($str);
+        return $obj;
+    }
+    
+    
+    
     
 }
