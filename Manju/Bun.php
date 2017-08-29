@@ -11,18 +11,80 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 
 abstract class Bun extends SimpleModel{
     
+    //===============       Configurable Properties        ===============//
+    
+    /**
+     * Type of the bean
+     * 
+     * @var string $bean
+     */
+    protected $beantype;
+    
+    /**
+     * Enables Scalar type conversion
+     * if set to false Manju will passtru the data after using the formatter//validator
+     * 
+     * @var bool
+     */
+    protected $scalar_type_conversion = true;
+    
+    /**
+     * New column to be added as a way to record the php scalar type
+     * to retrieve the corresponding typed data
+     * 
+     * @var string 
+     */
+    protected $scalar_type_suffix = '_phptype';
+    
+    
+    /**
+     * Flag that prevents Manju to execute
+     * the store() method. Can be used by your validator method
+     * to prevent adding data you don't want
+     * 
+     * @var bool
+     */
+    protected $cansave = true;
+    
+    
+    /**
+     * Flag that enables datetime columns to be created
+     *          - created : created_at
+     *          - updated : updated_at
+     * @var bool 
+     */
+    protected $savetimestamps = false;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
     const MANJU_VERSION = '1.0.alpha1';
     const ACCEPTED_BEAN_NAMES = '/^[^0-9][a-z0-9]+$/';
     const ACCEPTED_PROP_NAMES = '/^[^0-9_][a-z0-9_]+$/';
+    
+    protected static $connected = false;
+
+    /**
+     * List of beans declared to BeanHelper
+     * 
+     * @var array 
+     */
     public static $beanlist = [];
 
 
     
-    /**
-     * Type of the bean
-     * @param string $bean
-     */
-    protected $beantype;
+    
     
     
     /**
@@ -31,11 +93,17 @@ abstract class Bun extends SimpleModel{
     protected $bean;
     
     
+    /**
+     * Scallar typed properties converted from bean
+     * @var $array
+     */
     protected $properties = [];
     
     
     
-    
+    /**
+     * Model Construct method
+     */
     public function configure(){}
 
     
@@ -46,7 +114,9 @@ abstract class Bun extends SimpleModel{
         self::$beanlist or $this->beanlist();
         isset(self::$beanlist[$this->beantype()])?:self::$beanlist[$this->beantype()] = get_called_class();
         $bean = is_null($bean)?false:$bean;
+        $this->configure();
         $this->initialize($bean);
+        
     }
     
     public function __invoke($bean = null) {
@@ -56,7 +126,12 @@ abstract class Bun extends SimpleModel{
     
     
     private function initialize($bean = null){
-        if(!R::testConnection()){
+        
+        $this->cansave = true;
+        $this->properties = [];
+        
+        if(!self::$connected) self::$connected = R::testConnection();
+        if(!self::$connected){
             $message = "Cannot connect to the database please run R::setup() before calling a model.";
             throw new Exception($message);
             exit;
@@ -68,6 +143,15 @@ abstract class Bun extends SimpleModel{
                 break;
             case "NULL":
                 $this->create();
+                break;
+            case "object":
+                if($bean instanceof OODBBean){
+                    $this->takeown($bean);
+                    $this->open();
+                }
+                break;
+            case "array":
+                $this->import($bean);
                 break;
         }
         
@@ -107,7 +191,7 @@ abstract class Bun extends SimpleModel{
             $basename = str_replace(['model','own','shared','_'], '', $basename);
         }
         if(!preg_match(self::ACCEPTED_BEAN_NAMES, $basename)){
-            $message = sprintf('%s : invalid Bean Type please set "public static $beantype".', get_called_class());
+            $message = sprintf('%s : invalid Bean Type please set "protected $beantype".', get_called_class());
             throw new Exception($message);
             exit;
         }
@@ -115,7 +199,7 @@ abstract class Bun extends SimpleModel{
     }
     
     
-    //=============== FUSE Methods ===============//
+    //=============== FUSE Methods + RedBeanPHP\SimpleModel extended methods ===============//
     
     public function dispense() {}
     public function open(){}
@@ -141,34 +225,106 @@ abstract class Bun extends SimpleModel{
         return $this;
     }
 
-    public function loadBean(OODBBean $bean){
-        $this->bean = $bean;
-    }
-
     public function unbox() {
         return $this->bean;
     }
     
     
-    //=============== RedBeanAdapter ===============//
+    //=============== RedBean CRUD ===============//
     
-    public function load(int $id = 0){
-        BeanHelper::$enabled = false;
-        $bean = R::load($this->beantype(), $id);
+    /**
+     * Couples the bun to the bean
+     * @param OODBBean $bean
+     */
+    private function takeown(OODBBean $bean){
         $bean->setMeta('model', $this);
         $this->bean = $bean;
+    }
+    
+    
+    /**
+     * Method extended from RedBeanPHP\SimpleModel
+     * Loads the bean using BeanHelper
+     * 
+     * @param OODBBean $bean
+     * @return $this
+     */
+    public function loadBean(OODBBean $bean): Bun{
+        $this->initialize(false);
+        $this->bean = $bean;
+        return $this;
+    }
+
+
+    
+    
+    /**
+     * Create a new empty bean
+     * @return $this
+     */
+    public function create(): Bun{
+        //prevents double Manju\Bun instance
+        BeanHelper::$enabled = false;
+        $this->bean = null;
+        $this->initialize(false);
+        if($bean = R::dispense($this->beantype())){
+            $this->takeown($bean);
+        }
         BeanHelper::$enabled = true;
-        $this->open();
+        $this->dispense();
         return $this;
     }
     
-    public function create(){
+    /**
+     * Loads a bean with the data corresponding to the id column
+     * @param int $id id field of the bean
+     * @return $this
+     */
+    public function load(int $id = 0): Bun{
+        if(!$id) return $this->dispense ();
+        //prevents double Manju\Bun instance
         BeanHelper::$enabled = false;
-        $bean = R::dispense($this->beantype());
-        $bean->setMeta('model', $this);
-        $this->bean = $bean;
+        $this->bean = null;
+        $this->initialize(false);
+        if($bean = R::load($this->beantype(), $id)){
+            $this->takeown($bean);
+        }
         BeanHelper::$enabled = true;
-        $this->dispense();
+        if($this->id) $this->open();
+        else $this->dispense ();
+        return $this;
+    }
+    
+    /**
+     * Stores the bean into the database
+     * @param bool $fresh Refresh the bean with saved data
+     * @return $this
+     */
+    public function store(bool $fresh = false): Bun{
+        if(!$this->bean or !$this->cansave) return $this;
+        $this->initialize(false);
+        R::store($this->bean);
+        if($fresh) return $this->fresh ();
+        return $this;
+    }
+    
+    /**
+     * Reloads data for the current bean from the database
+     * @return $this
+     */
+    public function fresh(): Bun{
+        $this->bean or $this->initialize ();
+        return $this->load($this->id);
+    }
+    
+    /**
+     * Removes a bean from the database
+     * @return $this;
+     */
+    public function trash(): Bun{
+        if(!$this->bean) return;
+        R::trash($this->bean);
+        $this->bean = null;
         return $this;
     }
 

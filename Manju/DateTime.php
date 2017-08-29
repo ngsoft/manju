@@ -1,0 +1,46 @@
+<?php
+
+namespace Manju;
+
+if(!defined('MANJU_TIMEZONE')) define ('MANJU_TIMEZONE', 'UTC');
+if(!defined ('MANJU_TIMEFORMAT')) define ('MANJU_TIMEFORMAT', 'Y-m-d H:i:s');
+
+class DateTime extends \DateTime implements \JsonSerializable{
+    
+    const DB = 'Y-m-d H:i:s';
+    
+
+
+
+
+    public function __construct($time = 'now') {
+        $tz = MANJU_TIMEZONE;
+        date_default_timezone_set($tz);
+        if(is_numeric($time)) $time = date (MANJU_TIMEFORMAT, $time);
+        $tz = new \DateTimeZone($tz) or $tz = $object;
+        parent::__construct($time, new \DateTimeZone($tz));
+    }
+    
+    
+    public function format($format = null) {
+        if(!$format) $format = MANJU_TIMEFORMAT;
+        return parent::format($format);
+    }
+    
+    public function __toString() {
+        return $this->format();
+    }
+    
+    public function jsonSerialize() {
+        $a = [
+            'timestamp'     =>  $this->getTimestamp(),
+            'date'          =>  $this->format(),
+            'timezone'      => $this->getTimezone()->getName()
+        ];
+        return $a;
+    }
+
+
+
+    
+}
