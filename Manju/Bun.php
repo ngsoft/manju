@@ -181,7 +181,12 @@ abstract class Bun extends SimpleModel{
         }
     }
     
-    
+    /**
+     * Defines the bean type using the class basename
+     * 
+     * @throws Exception
+     * @return string
+     */
     public function beantype(){
         if($this->beantype) return $this->beantype;
         if($class = get_called_class()){
@@ -322,13 +327,10 @@ abstract class Bun extends SimpleModel{
      * @return $this;
      */
     public function trash(): Bun{
-        if(!$this->bean) return;
+        if(!$this->bean) return $this;
         R::trash($this->bean);
         $this->bean = null;
         return $this;
     }
-
-    
-    
     
 }

@@ -5,7 +5,7 @@ namespace Manju;
 if(!defined('MANJU_TIMEZONE')) define ('MANJU_TIMEZONE', 'UTC');
 if(!defined ('MANJU_TIMEFORMAT')) define ('MANJU_TIMEFORMAT', 'Y-m-d H:i:s');
 
-class DateTime extends \DateTime implements \JsonSerializable{
+class DateTime extends \DateTime implements \JsonSerializable, \Serializable{
     
     const DB = 'Y-m-d H:i:s';
     
@@ -17,13 +17,12 @@ class DateTime extends \DateTime implements \JsonSerializable{
         $tz = MANJU_TIMEZONE;
         date_default_timezone_set($tz);
         if(is_numeric($time)) $time = date (MANJU_TIMEFORMAT, $time);
-        $tz = new \DateTimeZone($tz) or $tz = $object;
         parent::__construct($time, new \DateTimeZone($tz));
     }
     
     
     public function format($format = null) {
-        if(!$format) $format = MANJU_TIMEFORMAT;
+        !$format or $format = MANJU_TIMEFORMAT;
         return parent::format($format);
     }
     
@@ -39,6 +38,20 @@ class DateTime extends \DateTime implements \JsonSerializable{
         ];
         return $a;
     }
+    
+    
+    public function serialize(){
+        $args = [
+            $this->getTimestamp()
+        ];
+        return serialize($args);
+    }
+
+    public function unserialize(string $serialized){
+        $args = unserialize($serialized);
+        call_user_func_array([$this, '__construct'], $args);
+    }
+
 
 
 
