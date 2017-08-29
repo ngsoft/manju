@@ -360,13 +360,15 @@ abstract class Bun extends SimpleModel{
     private function add_timestamps(){
         if(!$this->savetimestamps) return;
         $date = date(DateTime::DB);
+        
+        //save as valid sql datetime
+        if(!$this->created_at) $this->created_at = $date;
+        $this->updated_at = $date;
+        
         //force load values as Manju\DateTime object
         foreach (['created_at', 'updated_at'] as $prop){
             $this->setColumnScalarType($prop, 'datetime');
         }
-        //save as valid sql datetime
-        if(!$this->created_at) $this->created_at = $date;
-        $this->updated_at = $date;
         
     }
     
@@ -376,8 +378,8 @@ abstract class Bun extends SimpleModel{
      * @param string $type valid php scalar type or datetime (will creates a Manju\DateTime object)
      */
     protected function setColumnScalarType(string $prop, string $type){
-        !$this->bean or $this->initialize();
         if(!$this->scalar_type_conversion) return;
+        !$this->bean or $this->initialize();
         if(!in_array($type, self::$valid_scalar_types)) return;
         $col = $prop . $this->scalar_type_suffix;
         $this->$col = $type;
@@ -390,6 +392,7 @@ abstract class Bun extends SimpleModel{
      */
     protected function getColumnScalarType(string $prop){
         if(!$this->scalar_type_conversion) return null;
+        !$this->bean or $this->initialize();
         $col = $prop.$this->scalar_type_suffix;
         $val = $this->$col;
         return $val;
