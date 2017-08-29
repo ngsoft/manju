@@ -95,7 +95,7 @@ abstract class Bun extends SimpleModel{
      *          on __get(); will filter data
      *          $this->properties['price'] = floatval($this->bean->price)
      *          return $this->properties['price']
-     *          for more advanced conversions use
+     *          for more advanced conversions use formatters :
      *              protected function set_price($price){
      *                  return $data_to_put_to_bean
      *              }
@@ -362,7 +362,7 @@ abstract class Bun extends SimpleModel{
         $date = date(DateTime::DB);
         //force load values as Manju\DateTime object
         foreach (['created_at', 'updated_at'] as $prop){
-            $this->set_column_scalar_type($prop, 'datetime');
+            $this->setColumnScalarType($prop, 'datetime');
         }
         //save as valid sql datetime
         if(!$this->created_at) $this->created_at = $date;
@@ -375,7 +375,7 @@ abstract class Bun extends SimpleModel{
      * @param string $prop Property name
      * @param string $type valid php scalar type or datetime (will creates a Manju\DateTime object)
      */
-    protected function set_column_scalar_type(string $prop, string $type){
+    protected function setColumnScalarType(string $prop, string $type){
         !$this->bean or $this->initialize();
         if(!$this->scalar_type_conversion) return;
         if(!in_array($type, self::$valid_scalar_types)) return;
@@ -388,12 +388,100 @@ abstract class Bun extends SimpleModel{
      * @param string $prop name of the column
      * @return string|null
      */
-    protected function get_column_scalar_type(string $prop){
+    protected function getColumnScalarType(string $prop){
         if(!$this->scalar_type_conversion) return null;
         $col = $prop.$this->scalar_type_suffix;
         $val = $this->$col;
         return $val;
     }
+    
+    /**
+     * Converts data from the bean to the user
+     * @param string $prop
+     * @param type $val
+     * @return mixed converted data
+     */
+    protected function convertForGet(string $prop){
+        $val = $this->bean->$prop;
+        if($type = $this->getColumnScalarType($prop)){
+            switch ($type){
+                case"integer":
+                    $val = intval($val);
+                    break;
+                case "double":
+                    $val = floatval($val);
+                    break;
+                case "boolean":
+                    $val = boolval((int)$val);
+                    break;
+                case "array":
+                case "object":
+                    $val = $this->b64unserialize($val);
+                    break;
+                case "datetime":
+                    $val = new DateTime($val);
+            }
+        }
+        return $val;
+    }
+    
+    /**
+     * Convert data from the user to the bean
+     * @param string $prop
+     * @param type $val
+     * @return mixed converted data
+     */
+    protected function convertForSet(string $prop, $val){
+        //detects DateTime objects
+        if($val instanceof \DateTime){
+            $this->setColumnScalarType($prop, "datetime");
+            $val = $val->getTimestamp();//int
+        }
+        //datetime (int) timestamp conversion
+        //then passtru the string
+        if($declared_type = $this->getColumnScalarType($prop)){
+            if($declared_type == "datetime"){
+                if(is_int($val)){
+                    $val = date(DateTime::DB,$val);
+                }
+            }
+        }
+        $type = gettype($val);
+        if(in_array($type, self::$ignore_scalar_types)){
+            return $val;
+        }
+        if(!in_array($type, self::$valid_scalar_types)){
+            $val = null;
+            return $val;
+        }
+        switch ($type){
+            case"integer":
+                break;
+            case "double":
+                $val = "$val";
+                break;
+            case "boolean":
+                $val = $val?1:0;
+                break;
+            case "array":
+            case "object":
+                $val = $this->b64serialize($val);
+                break;
+        }
+        return $val;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**
