@@ -50,7 +50,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const MANJU_VERSION = '1.0.alpha1';
+    const MANJU_VERSION = '1.0.1';
     const ACCEPTED_BEAN_NAMES = '/^[^0-9][a-z0-9]+$/';
     const ACCEPTED_PROP_NAMES = '/^[^0-9_][a-z0-9_]+$/';
     
@@ -112,7 +112,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     private $tainted = false;
     
     
-    public static $plugins;
+    protected static $plugins;
 
 
 
@@ -362,6 +362,27 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if($val instanceof Bun){
             $val = $val->unbox();
         }
+        //many to one
+        //prevent accidental set without offset
+        //as that can break associations
+        foreach ([
+            '/^own([A-Z][a-z0-9]+)List$/',
+            '/^xown([A-Z][a-z0-9]+)List$/',
+            '/^shared([A-Z][a-z0-9]+)List$/',
+        ] as $regex){
+            if(preg_match($regex, $prop)){
+                //prevent accident
+                if(is_object($val)){
+                    if($val instanceof OODBBean or $val instanceof SimpleModel){
+                        $this->bean->{$prop}[]=$val;
+                        return;
+                    }
+                }
+                //can only set array of bean/Bun or empty array to delete
+                if(!is_array($val)) return;
+            }
+        }
+        
         //convert ?
         if($this->scalar_type_conversion){
             if($this->getColumnType($prop)){
@@ -374,8 +395,16 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     public function __unset($prop) {
         if(!is_null($this->bean->$prop)){
+            
+            //to many associations are arrays
+            if(is_array($this->bean->$prop)){
+                $this->bean->$prop = [];
+                return;
+            }
+            
             $this->bean->$prop = null;
             if($def = $this->getColumnDefaults($prop)){
+                //use converter
                 $this->$prop = $def;
             }
         }
