@@ -308,6 +308,12 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         }
         
         //association?
+        if(is_array($val)){
+            //rw mode
+            $val = &$this->bean->$prop;
+            return $val;
+        }
+        /*
         $check = [
             '/^own([A-Z][a-z0-9]+)List$/',
             '/^xown([A-Z][a-z0-9]+)List$/',
@@ -318,7 +324,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                 $val = &$this->bean->$prop;
                 return $val;
             }
-        }
+        }*/
         //many to one?
         if($val instanceof OODBBean){
             if($bun = $val->getMeta('model')){
@@ -470,8 +476,9 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     final public function store(bool $fresh = false): Bun{
         if(!$this->bean or !$this->cansave) return $this;
-        $this->add_timestamps();
         $this->updateTainted();
+        //as timestamps are objects too, this goes after
+        $this->add_timestamps();
         R::store($this->bean);
         if($fresh) return $this->fresh ();
         else $this->initialize(false);
@@ -736,21 +743,23 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     }
     
     /**
-     * Export data from Bean
+     * Export data from bean
+     * @param bool $convert convert data using schema
      * @return array
      */
-    public function export(): array{
+    public function export(bool $convert = true): array{
         $export = [];
         $this->bean or $this->initialize();
         $properties = array_merge($this->bean->getMeta('sys.orig'), $this->bean->getProperties());
         
         foreach ($properties as $prop => $val){
-            //owned/shared lists props contains upper chars, they won't be exported for better import
-            if(preg_match('/[A-Z]/', $prop)) continue;
+            //owned/shared lists are array, they won't be exported
+            if(is_array($val)) continue;
             //to one are beans
             if($val instanceof OODBBean) continue;
             //we use the converter like this
-            $export[$prop] = $this->$prop;
+            if($convert) $export[$prop] = $this->$prop;
+            else $export[$prop] = $val;
         }
         return $export;
     }
