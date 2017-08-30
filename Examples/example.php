@@ -7,3 +7,38 @@ R::debug(true);
 $p = new Examples\models\product();
 //$s = new Examples\models\shop();
 
+class Obj implements Serializable{
+    
+    
+    public $test = "it works";
+    
+    public $unserialized;
+    
+    public function serialize(){
+        $this->unserialized = "serialize works!";
+        return serialize($this->unserialized);
+    }
+
+    public function unserialize($serialized){
+        $this->unserialized = unserialize($serialized);
+        
+    }
+
+    
+    
+}
+/*
+$p->t = new Obj;
+$p->price = 299.99;
+$p->store();*/
+
+$p(2);
+
+
+
+//print_r ($p->t);
+
+
+
+
+print_r($p);

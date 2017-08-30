@@ -28,13 +28,6 @@ abstract class Bun extends SimpleModel{
      */
     protected $scalar_type_conversion = true;
     
-    /**
-     * New column to be added as a way to record the php scalar type
-     * to retrieve the corresponding typed data
-     * 
-     * @var string 
-     */
-    protected $scalar_type_suffix = '_phptype';
     
     
     /**
@@ -83,25 +76,10 @@ abstract class Bun extends SimpleModel{
      */
     private $properties = [];
     
+
     /**
-     * Converts data into $this->properties
-     * and send DB compatible data to the bean and then filter data on retrieve
-     * eg:
-     *          $product->price = 599.99;
-     *          on __set()
-     *          $this->properties['price'] = 599.99; // to reuse the data if needed __get() filter
-     *          $this->bean->price = "599.99";
-     *          $this->bean->price_phptype = "double";
-     *          on __get(); will filter data
-     *          $this->properties['price'] = floatval($this->bean->price)
-     *          return $this->properties['price']
-     *          for more advanced conversions use formatters :
-     *              protected function set_price($price){
-     *                  return $data_to_put_to_bean
-     *              }
-     *              protected function get_price($price_from_bean_and_converted){
-     *                  return $data_for_the_user;
-     *              }
+     * Valid types to be converted
+     * @var array 
      */
     private static $valid_scalar_types = [ "integer", "double", "boolean", "array", "object", "datetime"];
     
@@ -111,9 +89,22 @@ abstract class Bun extends SimpleModel{
     private static $ignore_scalar_types = [ "string", "NULL"];
     
     /**
-     * Input nothing into the bean
+     * Store Special columns
+     * @var array 
      */
-    private static $invalid_scalar_types = ["resource", "unknown type"];
+    private static $columns = [];
+    
+    /**
+     * Store default values
+     * @var array 
+     */
+    private static $defaults = [];
+
+    /**
+     * Store aliases
+     * @var array
+     */
+    private static $alias = [];
 
 
 
@@ -122,39 +113,72 @@ abstract class Bun extends SimpleModel{
 
     /**
      * Model Construct method
+     * Gets called when first inputing or retrieving data
      */
-    public function configure(){}
+    protected function configure(){}
 
-    
-
-
-    final public function __construct($bean = null) {
-        BeanHelper::$registered or new BeanHelper;
-        self::$beanlist or $this->beanlist();
-        isset(self::$beanlist[$this->beantype()])?:self::$beanlist[$this->beantype()] = get_called_class();
-        $bean = is_null($bean)?false:$bean;
-        $this->initialize($bean);
-        $this->configure();
-        
+    /**
+     * Defines if it't time to run $this->configure
+     */
+    private function _configure(){
+        $key = get_called_class();
+        if(!array_key_exists($key, self::$columns)){
+            self::$columns[$key] = [];
+            self::$defaults[$key] = [];
+            self::$alias[$key] = [];
+            $this->configure();
+        }
     }
     
+    /**
+     * Initialize the bean with defaults values
+     * gets called on load() and create()
+     */
+    private function initialize_bean(){
+        if($this->savetimestamps){
+            foreach (['created_at', 'updated_at'] as $prop){
+                $this->setColumnType($prop, 'datetime');
+            }
+        }
+        
+        //set defaults values to bean using the filter
+        foreach (self::$defaults[get_called_class()] as $prop => $val){
+            if(is_null($this->bean->$prop)){
+                $this->$prop = $val;
+            }
+        }
+        
+    }
+
+
+
     public function __invoke($bean = null) {
         $this->initialize($bean);
         return $this;
     }
     
+    public function __construct() {
+        $this->initialize(false);
+    }
+
     
+
     private function initialize($bean = null){
-        
-        $this->cansave = true;
-        $this->properties = [];
-        
         if(!self::$connected) self::$connected = R::testConnection();
         if(!self::$connected){
             $message = "Cannot connect to the database please run R::setup() before calling a model.";
             throw new Exception($message);
             exit;
         }
+        
+        $this->cansave = true;
+        $this->properties = [];
+        
+        BeanHelper::$registered or new BeanHelper;
+        self::$beanlist or $this->beanlist();
+        isset(self::$beanlist[$this->beantype()])?:self::$beanlist[$this->beantype()] = get_called_class();
+        $this->_configure();
+        
         if(is_bool($bean)) return;
         switch (gettype($bean)){
             case "integer":
@@ -234,16 +258,81 @@ abstract class Bun extends SimpleModel{
     
     
     
-    final public function __get($prop) {
-        return $this->bean->$prop;
+    final public function &__get($prop) {
+        $this->bean or $this->initialize();
+        //Alias?
+        $prop = $this->getAliasTarget($prop);
+        $val = $this->bean->$prop;
+        if($prop == 'id'){
+            return $val;
+        }
+        
+        //association?
+        $check = [
+            '/^own([A-Z][a-z0-9]+)List$/',
+            '/^xown([A-Z][a-z0-9]+)List$/',
+            '/^shared([A-Z][a-z0-9]+)List$/'
+        ];
+        foreach ($check as $regex){
+            if(preg_match($regex, $prop)){
+                $val = &$this->bean->$prop;
+                return $val;
+            }
+        }
+        //many to one?
+        if($val instanceof OODBBean){
+            if($bun = $val->getMeta('model')){
+                return $bun;
+            }
+            return $val;
+        }
+        //convert enabled?
+        if($this->scalar_type_conversion){
+            if(array_key_exists($prop, $this->properties)){
+                $val = $this->properties[$prop];
+            }
+            elseif($this->getColumnType($prop)){
+                $val = $this->convertForGet($prop, $val);
+            }
+        }
+        //call formater
+        $method = "get_$prop";
+        if(method_exists($this, $method)){
+            $val = $this->$method($val);
+        }
+        $this->properties[$prop] = $val;
+        return $val;
     }
 
-    final public function __isset($key) {
-        return isset( $this->bean->$key );
+    final public function __isset($prop) {
+        $this->bean or $this->initialize();
+        return isset( $this->bean->$prop );
     }
 
-    final public function __set($prop, $value): void {
-        $this->bean->$prop = $value;
+    final public function __set($prop, $val){
+        $this->bean or $this->initialize();
+        //Alias?
+        $prop = $this->getAliasTarget($prop);
+        if($prop == 'id') return;
+        //validator/Formater
+        $method = "set_$prop";
+        if(method_exists($this, $method)){
+            $val = $this->$method($val);
+        }
+        
+        //one to many
+        //get error if inputing SimpleModel instead of OODBBean
+        if($val instanceof Bun){
+            $val = $val->unbox();
+        }
+        //convert ?
+        if($this->scalar_type_conversion){
+            if($this->getColumnType($prop)){
+                $this->properties[$prop] = $val;
+                $val = $this->convertForSet($prop, $val);
+            }
+        }
+        $this->bean->$prop = $val;
     }
 
     public function box() {
@@ -278,6 +367,7 @@ abstract class Bun extends SimpleModel{
     final public function loadBean(OODBBean $bean): Bun{
         $this->initialize(false);
         $this->bean = $bean;
+        $this->initialize_bean();
         return $this;
     }
 
@@ -288,12 +378,14 @@ abstract class Bun extends SimpleModel{
     final public function create(): Bun{
         //prevents double Manju\Bun instance
         BeanHelper::$enabled = false;
+        //destroy current bean
         $this->bean = null;
         $this->initialize(false);
         if($bean = R::dispense($this->beantype())){
             $this->takeown($bean);
         }
         BeanHelper::$enabled = true;
+        $this->initialize_bean();
         $this->dispense();
         return $this;
     }
@@ -313,6 +405,7 @@ abstract class Bun extends SimpleModel{
             $this->takeown($bean);
         }
         BeanHelper::$enabled = true;
+        $this->initialize_bean();
         if($this->id) $this->open();
         else $this->dispense ();
         return $this;
@@ -360,53 +453,96 @@ abstract class Bun extends SimpleModel{
     private function add_timestamps(){
         if(!$this->savetimestamps) return;
         $date = date(DateTime::DB);
-        
         //save as valid sql datetime
-        if(!$this->created_at) $this->created_at = $date;
-        $this->updated_at = $date;
-        
-        //force load values as Manju\DateTime object
-        foreach (['created_at', 'updated_at'] as $prop){
-            $this->setColumnScalarType($prop, 'datetime');
-        }
-        
+        if(!$this->bean->created_at) $this->bean->created_at = $date;
+        $this->bean->updated_at = $date;
     }
     
     /**
-     * creates a column into the bean using the scalar_type_suffix and store the type if valid
+     * Set scalar type for column
      * @param string $prop Property name
      * @param string $type valid php scalar type or datetime (will creates a Manju\DateTime object)
      */
-    protected function setColumnScalarType(string $prop, string $type){
-        if(!$this->scalar_type_conversion) return;
-        !$this->bean or $this->initialize();
-        if(!in_array($type, self::$valid_scalar_types)) return;
-        $col = $prop . $this->scalar_type_suffix;
-        $this->$col = $type;
+    protected function setColumnType(string $col, string $type){
+        if(!in_array($type, self::$valid_scalar_types)) return false;
+        $cols = &self::$columns[get_called_class()];
+        $cols[$col] = $type;
+        return true;
     }
     
     /**
-     * Get the declared scalar type for the column $prop
+     * Get the declared scalar type for the column
      * @param string $prop name of the column
      * @return string|null
      */
-    protected function getColumnScalarType(string $prop){
-        if(!$this->scalar_type_conversion) return null;
-        !$this->bean or $this->initialize();
-        $col = $prop.$this->scalar_type_suffix;
-        $val = $this->$col;
-        return $val;
+    protected function getColumnType(string $col){
+        if(!isset(self::$columns[get_called_class()][$col])) return null;
+        return self::$columns[get_called_class()][$col];
     }
     
+    /**
+     * Set the default value for a column
+     * @param string $col Column
+     * @param type $defaults Default value to set
+     */
+    protected function setColumnDefaults(string $col, $defaults = null){
+        if(is_null($defaults)) return;
+        self::$defaults[get_called_class()][$col] = $defaults;
+    }
+    
+    /**
+     * Get the default value for a column
+     * @param string $col Column name
+     * @return type
+     */
+    protected function getColumnDefaults(string $col){
+        if(!array_key_exists($col, self::$defaults[get_called_class()])) return null;
+        return self::$defaults[get_called_class()][$col];
+    }
+    
+    /**
+     * Add a column alias
+     * @param string $alias Alias to use
+     * @param string $target Column the alias points to
+     * @return \Manju\Bun
+     */
+    protected function addAlias(string $alias, string $target): Bun{
+        self::$alias[get_called_class()][$alias] = $target;
+        return $this;
+    }
+    
+    /**
+     * Get the $alias target or the alias itself if no target
+     * @param string $alias
+     * @return string
+     */
+    protected function getAliasTarget(string $alias): string{
+        return isset(self::$alias[get_called_class()][$alias])?self::$alias[get_called_class()][$alias]:$alias;
+    }
+    
+    /**
+     * Adds a managed column
+     * @param string $col Column name
+     * @param string $type Column Scalar type
+     * @param type $defaults Column default value
+     * @return \Manju\Bun
+     */
+    protected function addCol(string $col, string $type = null, $defaults = null):Bun{
+        $this->setColumnType($col, $type);
+        if(!is_null($defaults))$this->setColumnDefaults($col, $defaults);
+        return $this;
+    }
+
+
+
     /**
      * Converts data from the bean to the user
      * @param string $prop
      * @param type $val
      * @return mixed converted data
      */
-    protected function convertForGet(string $prop){
-        $val = $this->bean->$prop;
-        if($type = $this->getColumnScalarType($prop)){
+    protected function convertForGet(string $prop, $val){
+        if($type = $this->getColumnType($prop)){
             switch ($type){
                 case"integer":
                     $val = intval($val);
@@ -437,53 +573,42 @@ abstract class Bun extends SimpleModel{
     protected function convertForSet(string $prop, $val){
         //detects DateTime objects
         if($val instanceof \DateTime){
-            $this->setColumnScalarType($prop, "datetime");
+            $this->setColumnType($prop, "datetime");
             $val = $val->getTimestamp();//int
         }
         //datetime (int) timestamp conversion
         //then passtru the string
-        if($declared_type = $this->getColumnScalarType($prop)){
+        if($declared_type = $this->getColumnType($prop)){
             if($declared_type == "datetime"){
                 if(is_int($val)){
                     $val = date(DateTime::DB,$val);
                 }
             }
         }
+        
         $type = gettype($val);
+        
         if(in_array($type, self::$ignore_scalar_types)){
             return $val;
         }
-        if(!in_array($type, self::$valid_scalar_types)){
-            $val = null;
-            return $val;
-        }
-        switch ($type){
-            case"integer":
-                break;
-            case "double":
-                $val = "$val";
-                break;
-            case "boolean":
-                $val = $val?1:0;
-                break;
-            case "array":
-            case "object":
-                $val = $this->b64serialize($val);
-                break;
+        if(in_array($type, self::$valid_scalar_types)){
+            switch ($type){
+                case"integer":
+                    break;
+                case "double":
+                    $val = "$val";
+                    break;
+                case "boolean":
+                    $val = $val?1:0;
+                    break;
+                case "array":
+                case "object":
+                    $val = $this->b64serialize($val);
+                    break;
+            }
         }
         return $val;
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -511,13 +636,14 @@ abstract class Bun extends SimpleModel{
      * @param type $str
      * @return array or object
      */
-    public function b64unserialize(string $str){
-        $str = base64_decode($str);
-        $obj = unserialize($str);
+    public function b64unserialize(string $str = null){
+        $obj = null;
+        if(!empty($str)){
+            $str = base64_decode($str);
+            $obj = unserialize($str);   
+        }
         return $obj;
     }
-    
-    
     
     
 }

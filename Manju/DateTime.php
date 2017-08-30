@@ -47,7 +47,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \Serializable{
         return serialize($args);
     }
 
-    public function unserialize(string $serialized){
+    public function unserialize($serialized){
         $args = unserialize($serialized);
         call_user_func_array([$this, '__construct'], $args);
     }
