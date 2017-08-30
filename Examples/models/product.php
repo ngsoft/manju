@@ -11,7 +11,7 @@ class product extends \Manju\Bun{
                 ->addAlias('t', 'test')
                 ->addAlias('s', 'shop');
         $this->addPlugin(new \Obj());
-        
+        $this->plugins()->obj->test = "can access property like that.";
     }
     
 

@@ -90,6 +90,7 @@ foreach (R::findAll('product') as $p){
 
 //$s(1)->p = $p(1);
 //$s->store();
+/*
 $s(1)->p = [];
 $s->store();
-print_r($s);
+print_r($s);*/
