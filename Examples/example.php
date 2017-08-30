@@ -56,4 +56,4 @@ $s->p[]=$p(2);
 $s->store();
 print_r($s);*/
 
-print_r($s(1)->p);
+print json_encode($s(1)->getPlate('p'), JSON_PRETTY_PRINT);

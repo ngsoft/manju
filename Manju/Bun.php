@@ -313,18 +313,6 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             $val = &$this->bean->$prop;
             return $val;
         }
-        /*
-        $check = [
-            '/^own([A-Z][a-z0-9]+)List$/',
-            '/^xown([A-Z][a-z0-9]+)List$/',
-            '/^shared([A-Z][a-z0-9]+)List$/'
-        ];
-        foreach ($check as $regex){
-            if(preg_match($regex, $prop)){
-                $val = &$this->bean->$prop;
-                return $val;
-            }
-        }*/
         //many to one?
         if($val instanceof OODBBean){
             if($bun = $val->getMeta('model')){
@@ -506,6 +494,32 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     }
     
     //===============       Bun       ===============//
+    
+    /**
+     * Gets an array of Bun corresponding to a One to Many or Many to Many relationship
+     * @param string $prop
+     * @return array
+     */
+    public function getPlate(string $prop): array{
+        $prop = $this->getAliasTarget($prop);
+        $return = [];
+        if($val = $this->bean->$prop){
+            if(is_array($val)){
+                foreach ($val as $id => &$bean){
+                    $bun = $bean->getMeta('model');
+                    if($bun instanceof Bun){
+                        $return[$id] = $bean->box();
+                    }
+                    else $return[$id] = $bean;
+                }
+            }
+        }
+        return $return;
+    }
+    
+    
+    
+    
     
     /**
      * Adds created_at and updated_at columns and their values
