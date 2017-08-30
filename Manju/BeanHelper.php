@@ -30,7 +30,7 @@ class BeanHelper extends SimpleFacadeBeanHelper{
         }
         $model = $bean->getMeta( 'type' );
         if(isset(Bun::$beanlist[$model])){
-            $obj = self::factory( self::$beanlist[$model] );
+            $obj = self::factory( Bun::$beanlist[$model] );
             $obj->loadBean( $bean );
             return $obj;
         }

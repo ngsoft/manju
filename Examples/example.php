@@ -55,3 +55,5 @@ $s->name = 'Darty';
 $s->p[]=$p(2);
 $s->store();
 print_r($s);*/
+
+print_r($s(1)->p);
