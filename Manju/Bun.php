@@ -3,7 +3,6 @@
 namespace Manju;
 use RedBeanPHP\SimpleModel;
 use RedBeanPHP\OODBBean;
-use RedBeanPHP\OODB;
 use RedBeanPHP\Facade as R;
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     throw new Exception('This program needs php version > 7.0 to run correctly.');
@@ -105,6 +104,12 @@ abstract class Bun extends SimpleModel{
      * @var array
      */
     private static $alias = [];
+    
+    /**
+     * Does array or obj gets accessed?
+     * @var bool
+     */
+    private $tainted = false;
 
 
 
@@ -173,6 +178,7 @@ abstract class Bun extends SimpleModel{
         
         $this->cansave = true;
         $this->properties = [];
+        $this->tainted = false;
         
         BeanHelper::$registered or new BeanHelper;
         self::$beanlist or $this->beanlist();
@@ -293,6 +299,9 @@ abstract class Bun extends SimpleModel{
             }
             elseif($this->getColumnType($prop)){
                 $val = $this->convertForGet($prop, $val);
+                if(is_object($val) or is_array($val)){
+                    $this->tainted = true;
+                }
             }
         }
         //call formater
@@ -419,6 +428,7 @@ abstract class Bun extends SimpleModel{
     final public function store(bool $fresh = false): Bun{
         if(!$this->bean or !$this->cansave) return $this;
         $this->add_timestamps();
+        $this->updateTainted();
         R::store($this->bean);
         if($fresh) return $this->fresh ();
         else $this->initialize(false);
@@ -608,6 +618,23 @@ abstract class Bun extends SimpleModel{
             }
         }
         return $val;
+    }
+    
+    /**
+     * Update objects or array if they gets accessed
+     * before using store()
+     */
+    protected function updateTainted(){
+        if(!$this->tainted) return;
+        if(!$this->scalar_type_conversion) return;
+        foreach ($this->properties as $prop => $val){
+            if(is_array($val) or is_object($val)){
+                if(gettype($val) == $this->getColumnType($prop)){
+                    $val = $this->convertForSet($prop, $val);
+                    $this->bean->$prop = $val;
+                }
+            }
+        }
     }
 
 

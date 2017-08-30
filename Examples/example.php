@@ -12,10 +12,9 @@ class Obj implements Serializable{
     
     public $test = "it works";
     
-    public $unserialized;
+    public $unserialized = "serialize works!";
     
     public function serialize(){
-        $this->unserialized = "serialize works!";
         return serialize($this->unserialized);
     }
 
@@ -32,13 +31,13 @@ $p->t = new Obj;
 $p->price = 299.99;
 $p->store();*/
 
-$p(2);
+//$p(2)->t->unserialized = "updating works";
 
-
+//$p->store();
 
 //print_r ($p->t);
 
 
 
 
-print_r($p);
+print_r($p(2)->t);
