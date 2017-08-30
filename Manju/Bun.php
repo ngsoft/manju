@@ -523,6 +523,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if(!$this->bean) return $this;
         R::trash($this->bean);
         $this->bean = null;
+        $this->initialize();
         return $this;
     }
     
