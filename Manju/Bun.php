@@ -110,6 +110,9 @@ abstract class Bun extends SimpleModel{
      * @var bool
      */
     private $tainted = false;
+    
+    
+    public static $plugins;
 
 
 
@@ -250,6 +253,37 @@ abstract class Bun extends SimpleModel{
             exit;
         }
         return $this->beantype = $basename;
+    }
+    
+    /**
+     * Access the plugins
+     * @return \stdClass
+     */
+    public function plugins(){
+        if(!is_object(self::$plugins)){
+            self::$plugins = new \stdClass();
+        }
+        return self::$plugins;
+    }
+    
+    /**
+     * Add a plugin accessible to all the models
+     * @param type $instance Plugin Object
+     * @param string $friendly_name name for the plugin to be accessed $this->plugins()->friendly_name
+     * @return \Manju\Bun
+     */
+    public function addPlugin($instance, string $friendly_name = null): Bun{
+        if(!is_object($instance)){
+            return $this;
+        }
+        if(!$friendly_name){
+            $class = get_class($instance);
+            $classpath = explode('\\', $class);
+            $basename = array_pop($classpath);
+            $friendly_name = strtolower($basename);
+        }
+        $this->plugins()->$friendly_name = $instance;
+        return $this;
     }
     
     

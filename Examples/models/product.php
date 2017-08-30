@@ -10,6 +10,8 @@ class product extends \Manju\Bun{
         $this   ->addCol('test', 'object')
                 ->addAlias('t', 'test')
                 ->addAlias('s', 'shop');
+        $this->addPlugin(new \Obj());
+        
     }
     
 
