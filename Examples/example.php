@@ -42,4 +42,7 @@ $p->store();*/
 
 
 
-print_r($p(2)->t);
+//print_r($p(2)->export());
+
+print $p(2);
+print_r($p);

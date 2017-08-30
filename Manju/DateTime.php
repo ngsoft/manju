@@ -9,6 +9,9 @@ class DateTime extends \DateTime implements \JsonSerializable, \Serializable{
     
     const DB = 'Y-m-d H:i:s';
     
+    public $timestamp;
+    
+    
 
 
 
@@ -18,11 +21,12 @@ class DateTime extends \DateTime implements \JsonSerializable, \Serializable{
         date_default_timezone_set($tz);
         if(is_numeric($time)) $time = date (MANJU_TIMEFORMAT, $time);
         parent::__construct($time, new \DateTimeZone($tz));
+        $this->timestamp = $this->getTimestamp();
     }
     
     
     public function format($format = null) {
-        !$format or $format = MANJU_TIMEFORMAT;
+        !$format and $format = MANJU_TIMEFORMAT;
         return parent::format($format);
     }
     

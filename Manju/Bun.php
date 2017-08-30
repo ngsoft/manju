@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
     throw new Exception('This program needs php version > 7.0 to run correctly.');
 }
 
-abstract class Bun extends SimpleModel{
+abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable{
     
     //===============       Configurable Properties        ===============//
     
@@ -377,6 +377,15 @@ abstract class Bun extends SimpleModel{
         }
         $this->bean->$prop = $val;
     }
+    
+    public function __unset($prop) {
+        if(!is_null($this->bean->$prop)){
+            $this->bean->$prop = null;
+            if($def = $this->getColumnDefaults($prop)){
+                $this->$prop = $def;
+            }
+        }
+    }
 
     public function box() {
         return $this;
@@ -706,5 +715,94 @@ abstract class Bun extends SimpleModel{
         return $obj;
     }
     
+    //===============       Import/Export        ===============//
     
+    
+    /**
+     * Import $data into Bean
+     * @param array $data
+     */
+    public function import(array $data){
+        if(!count($data)) return;
+        
+        if(isset($data['$id'])) $this->load($data['id']);
+        else $this->create ();
+        
+        foreach ($data as $prop => $val){
+            if(is_int($prop) or is_null($prop)) continue;
+            //convert data
+            $this->$prop = $val;
+        }
+    }
+    
+    /**
+     * Export data from Bean
+     * @return array
+     */
+    public function export(): array{
+        $export = [];
+        $this->bean or $this->initialize();
+        $properties = array_merge($this->bean->getMeta('sys.orig'), $this->bean->getProperties());
+        
+        foreach ($properties as $prop => $val){
+            //owned/shared lists props contains upper chars, they won't be exported for better import
+            if(preg_match('/[A-Z]/', $prop)) continue;
+            //to one are beans
+            if($val instanceof OODBBean) continue;
+            //we use the converter like this
+            $export[$prop] = $this->$prop;
+        }
+        return $export;
+    }
+    
+    //===============       Interfaces Specific        ===============//
+    
+    public function getIterator(){
+        return new \ArrayIterator($this->export());
+    }
+    
+    public function count(){
+        return count($this->export());
+    }
+    
+    public function offsetExists($prop){
+        return $this->__isset($prop);
+    }
+
+    public function &offsetGet($prop){
+        $val = $this->__get($prop);
+        return $val;
+    }
+
+    public function offsetSet($prop, $val){
+        $this->__set($prop,$val);
+    }
+
+    public function offsetUnset($propt){
+        $this->__unset($propt);
+    }
+    
+    public function jsonSerialize() {
+        $data = $this->export();
+        $return = [];
+        
+        foreach($data as $prop => $val){
+            if(is_object($val)){
+                if($val instanceof \JsonSerializable) $val = $val->jsonSerialize ();
+                else{
+                    //try to get most values
+                    $val = json_decode(json_encode($val),true);
+                }
+            }
+            $return[$prop] = $val;
+        }
+        return $return;
+    }
+    
+    
+    public function __toString() {
+        return json_encode($this, JSON_PRETTY_PRINT);
+    }
+
+
 }
