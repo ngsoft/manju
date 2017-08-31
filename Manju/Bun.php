@@ -4,6 +4,7 @@ namespace Manju;
 use RedBeanPHP\SimpleModel;
 use RedBeanPHP\OODBBean;
 use RedBeanPHP\Facade as R;
+
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     throw new Exception('This program needs php version > 7.0 to run correctly.');
     exit;
