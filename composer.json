@@ -6,7 +6,9 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Aymeric Anger"
+            "name": "Aymeric Anger",
+            "email": "daedelus.git@gmail.com",
+            "homepage": "https://github.com/ngsoft"
         }
     ],
     "require": {
@@ -18,5 +20,7 @@
         "psr-4": {
             "Manju\\": "Manju/"
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
