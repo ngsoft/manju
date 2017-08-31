@@ -107,6 +107,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     private static $alias = [];
     
     /**
+     * Store required values
+     * @var array
+     */
+    private static $required = [];
+
+
+    /**
      * Does array or obj gets accessed?
      * @var bool
      */
@@ -138,6 +145,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             self::$columns[$key] = [];
             self::$defaults[$key] = [];
             self::$alias[$key] = [];
+            self::$required[$key] = [];
             $this->configure();
         }
     }
@@ -500,9 +508,11 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         $this->updateTainted();
         //as timestamps are objects too, this goes after
         $this->add_timestamps();
-        R::store($this->bean);
-        if($fresh) return $this->fresh ();
-        else $this->initialize(false);
+        if($this->checkRequired()){
+            R::store($this->bean);
+            if($fresh) return $this->fresh ();
+            else $this->initialize(false);
+        }
         return $this;
     }
     
@@ -755,9 +765,40 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if(!is_null($defaults))$this->setColumnDefaults($col, $defaults);
         return $this;
     }
+    
+    /**
+     * Set a required col
+     * @param string $col
+     * @return \Manju\Bun
+     */
+    protected function addRequired(string $col): Bun{
+        self::$required[get_called_class()][]=$col;
+        return $this;
+    }
+    
+    /**
+     * Get required column list
+     * @return array
+     */
+    protected function getRequiredCols():array{
+        return self::$required[get_called_class()];
+    }
+    
+    /**
+     * Check if all required cols are set
+     * Cancel the store() method if false
+     * @return boolean
+     */
+    private function checkRequired(){
+        foreach (self::$required[get_called_class()] as $prop){
+            if(is_null($this->bean->$prop)){
+                return false;
+            }
+        }
+        return true;
+    }
 
-
-
+    
     /**
      * Converts data from the bean to the user
      * @param string $prop
