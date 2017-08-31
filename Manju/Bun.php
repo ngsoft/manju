@@ -52,7 +52,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const MANJU_VERSION = '1.0.b1';
+    const MANJU_VERSION = '0.1.2';
     const ACCEPTED_BEAN_NAMES = '/^[^0-9][a-z0-9]+$/';
     const ACCEPTED_PROP_NAMES = '/^[^0-9_][a-z0-9_]+$/';
     
