@@ -791,7 +791,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return boolean
      */
     private function checkRequired(){
-        foreach (self::$required[get_called_class()] as $prop){
+        foreach ($this->getRequiredCols() as $prop){
             if(is_null($this->bean->$prop)){
                 return false;
             }
