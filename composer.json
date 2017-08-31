@@ -1,6 +1,6 @@
 {
     "name": "ngsoft/manju",
-    "description": "Manju ORM",
+    "description": "Manju ORM Based on RedBeanPHP, improving the SimpleModel giving it the faculty to store php scalar types and objects into the database",
     "keywords": ["orm"],
     "homepage": "https://github.com/ngsoft/manju",
     "license": "MIT",
