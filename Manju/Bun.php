@@ -768,6 +768,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     /**
      * Set a required col
+     * Equivalent to sql : notnull
      * @param string $col
      * @return \Manju\Bun
      */
