@@ -7,7 +7,7 @@ require_once dirname(__DIR__) . '/Manju/bootstrap.php';
 $l = new Composer\Autoload\ClassLoader;
 $l->addPsr4(sprintf('%s\\', basename(__DIR__)), __DIR__);
 $l->register();
-//=======================
+//=======================//
 
 
 R::setup(sprintf('sqlite:%s',__DIR__ . '/data/example.db'));

@@ -196,7 +196,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         $this->properties = [];
         $this->tainted = false;
         
-        BeanHelper::$registered or new BeanHelper;
+        BunHelper::register();
         self::$beanlist or $this->beanlist();
         isset(self::$beanlist[$this->beantype()])?:self::$beanlist[$this->beantype()] = get_called_class();
         $this->_configure();
@@ -464,17 +464,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return $this
      */
     final public function create(): Bun{
-        //prevents double Manju\Bun instance
-        BeanHelper::$enabled = false;
-        //destroy current bean
-        $this->bean = null;
-        count(self::$columns) or $this->initialize(false);
-        if($bean = R::dispense($this->beantype())){
-            $this->takeown($bean);
-        }
-        BeanHelper::$enabled = true;
-        $this->initialize_bean();
-        $this->dispense();
+        BunHelper::dispense($this);
         return $this;
     }
     
@@ -484,18 +474,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return $this
      */
     final public function load(int $id = 0): Bun{
-        if(!$id) return $this->dispense ();
-        //prevents double Manju\Bun instance
-        BeanHelper::$enabled = false;
-        $this->bean = null;
-        $this->initialize(false);
-        if($bean = R::load($this->beantype(), $id)){
-            $this->takeown($bean);
-        }
-        BeanHelper::$enabled = true;
-        $this->initialize_bean();
-        if($this->id) $this->open();
-        else $this->dispense ();
+        BunHelper::load($this, $id);
         return $this;
     }
     

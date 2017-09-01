@@ -19,8 +19,7 @@
     ],
     "require": {
         "php": ">=7.0",
-        "gabordemooij/redbean": "v4.3.4",
-        "monolog/monolog": "^1.23"
+        "gabordemooij/redbean": "^4.3"
     },
     "autoload": {
         "psr-4": {

@@ -15,11 +15,10 @@ try {
                 }
             }
         }
-        throw new Exception("Composer not found, please run composer install wher composer.json file is located.\n");
+        throw new Exception("Composer not found, please run composer install where composer.json file is located.\n");
     }
 } catch (Exception $ex) {
     print $ex->getMessage();
     exit(1);
 }
-
 
