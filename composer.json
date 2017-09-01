@@ -12,14 +12,13 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
-        "psr/log": "^1.0",
-        "gabordemooij/redbean": "v4.3.4"
+        "php": ">=7.0"
     },
     "autoload": {
         "psr-4": {
             "Manju\\": "Manju/"
-        }
+        },
+        "files": []
     },
     "minimum-stability": "dev",
     "prefer-stable": true

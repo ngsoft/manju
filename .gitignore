@@ -1,4 +1,3 @@
-/Examples/data/*.db
-/nbproject/*
+/nbproject/
 /vendor/
 /composer.lock
