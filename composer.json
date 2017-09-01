@@ -19,10 +19,7 @@
     "autoload": {
         "psr-4": {
             "Manju\\": "Manju/"
-        },
-        "files": [
-            "Manju/bootstrap.php"
-        ]
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

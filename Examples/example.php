@@ -2,6 +2,14 @@
 use RedBeanPHP\Facade as R;
 define('example',1);
 require_once dirname(__DIR__) . '/Manju/bootstrap.php';
+
+//use composer autoloader
+$l = new Composer\Autoload\ClassLoader;
+$l->addPsr4(sprintf('%s\\', basename(__DIR__)), __DIR__);
+$l->register();
+//=======================
+
+
 R::setup(sprintf('sqlite:%s',__DIR__ . '/data/example.db'));
 R::debug(true);
 
