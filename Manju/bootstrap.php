@@ -1,2 +1,6 @@
 <?php
 
+/**
+ * Detect Composer
+ */
+
