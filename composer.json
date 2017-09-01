@@ -18,7 +18,9 @@
         "psr-4": {
             "Manju\\": "Manju/"
         },
-        "files": []
+        "files": [
+            "Manju/bootstrap.php"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
