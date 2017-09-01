@@ -15,7 +15,7 @@ try {
                 }
             }
         }
-        throw new Exception("Composer not found, please run composer install");
+        throw new Exception("Composer not found, please run composer install wher composer.json file is located.\n");
     }
 } catch (Exception $ex) {
     print $ex->getMessage();
