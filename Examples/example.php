@@ -1,6 +1,6 @@
 <?php
 use RedBeanPHP\Facade as R;
-
+define('example',1);
 require_once dirname(__DIR__) . '/Manju/bootstrap.php';
 R::setup(sprintf('sqlite:%s',__DIR__ . '/data/example.db'));
 R::debug(true);
