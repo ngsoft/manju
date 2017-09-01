@@ -4,3 +4,4 @@
  * Detect Composer
  */
 
+echo 1;
