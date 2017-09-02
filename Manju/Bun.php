@@ -174,9 +174,10 @@ class Bun extends SimpleModel{
 
     
     protected function log($level, $message, array $context = []){
-        //on demand loading
-        if(!self::$logger) self::$logger = new Logger();
-        self::$logger->$level($message,$context);
+        if(!self::$logger){
+            if(class_exists('Manju\\Loader')) self::$logger = new Logger();
+        }
+        if(self::$logger) self::$logger->$level($message,$context);
     }
 
     

@@ -9,9 +9,18 @@ use Monolog\ErrorHandler;
 use Monolog\Handler\NullHandler;
 use RedBeanPHP\Facade as R;
 
-
+/**
+ * Constants used
+ */
 @define('MANJU_LOG_FILE', null);
 @define('MANJU_DEBUG', false);
+
+/**
+ * Logger needs Monolog
+ */
+if(!class_exists('Monolog\\Logger')){
+    return;
+}
 
 /**
  * Sends and gets logs from monolog
@@ -27,6 +36,7 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
     private static $debug = false;
     private static $logfile;
     private $log = [];
+    private $timeline = [];
     private $ishandler = false;
     
     
@@ -88,16 +98,14 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
             'extra'     =>  $record['extra']
         ];
         
-        $this->log['timeline'][] = $record['formatted'];
+        $this->timeline[] = $record['formatted'];
     }
     
     public function close(){
         if(!self::$debug) return;
         if($this->ishandler and $this->log){
-            $timeline = $this->log['timeline'];
-            unset($this->log['timeline']);
             ksort($this->log);
-            $this->log['timeline'] = $timeline;
+            $this->log['timeline'] = $this->timeline;
             print $this;
         }
     }
@@ -111,9 +119,4 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
         return json_encode($this, JSON_PRETTY_PRINT);
     }
 
-    
-    
-    
-    
-    
 }
