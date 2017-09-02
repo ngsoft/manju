@@ -77,6 +77,7 @@ class Bun extends SimpleModel{
      * @var Psr\Log\LoggerInterface
      */
     protected static $logger;
+    
 
     /**
      * Bean
@@ -87,7 +88,8 @@ class Bun extends SimpleModel{
     
 
     public function __construct() {
-        $this->debug('test');
+        $this->error('test error');
+        var_dump(self::$logger);
     }
 
     public function __get($prop) {
@@ -138,7 +140,6 @@ class Bun extends SimpleModel{
      */
     public function setLogger(LoggerInterface $logger){
         self::$logger = $logger;
-        return $this;
     }
 
     /**
@@ -178,6 +179,9 @@ class Bun extends SimpleModel{
      * @return void
      */
     protected function log($level, $message, array $context = []){
+        if(!self::$logger and class_exists("Manju\\Logger")){
+            $this->setLogger(new Logger);
+        }
         if(self::$logger) self::$logger->$level($message,$context);
     }
     
