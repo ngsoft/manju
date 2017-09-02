@@ -4,6 +4,7 @@ namespace Manju;
 use RedBeanPHP\SimpleModel;
 use RedBeanPHP\OODBBean;
 use RedBeanPHP\Facade as R;
+use Psr\Log\LoggerInterface;
 
 
 
@@ -56,18 +57,6 @@ class Bun extends SimpleModel{
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * List of beans declared to BunHelper
      * 
@@ -83,47 +72,19 @@ class Bun extends SimpleModel{
     private $properties = [];
     
     /**
-     * Link to logger
-     * @var Manju\Logger 
+     * Logger Aware
+     * Set to static for better reusability
+     * @var Psr\Log\LoggerInterface
      */
-    private static $logger;
-
-
-
-
-
-
-
-
-
+    protected static $logger;
 
     /**
+     * Bean
      * @var OODBBean
      */
     protected $bean;
+ 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public function __construct() {
         $this->notice('test');
@@ -166,10 +127,59 @@ class Bun extends SimpleModel{
     public function __toString() {
         
     }
+    
+    
 
+    //===============       Logger        ===============//
     
-    
-    
+    /**
+     * Sets a PSR-3 logger.
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger){
+        self::$logger = $logger;
+        return $this;
+    }
+
+    /**
+     * Runtime errors that do not require immediate action but should typically
+     * be logged and monitored.
+     *
+     * @param string $message
+     * @param array  $context
+     *
+     * @return void
+     */
+    protected function error($message, array $context = []){
+        $this->log('error', $message, $context);
+    }
+
+
+
+    /**
+     * Detailed debug information.
+     *
+     * @param string $message
+     * @param array  $context
+     *
+     * @return void
+     */
+    protected function debug($message, array $context = []){
+        $this->log('debug', $message, $context);
+    }
+
+    /**
+     * Logs with an arbitrary level.
+     *
+     * @param mixed  $level
+     * @param string $message
+     * @param array  $context
+     *
+     * @return void
+     */
+    protected function log($level, $message, array $context = []){
+        if(self::$logger) self::$logger->$level($message,$context);
+    }
     
     
     
