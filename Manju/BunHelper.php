@@ -15,24 +15,24 @@ class BunHelper extends SimpleFacadeBeanHelper{
 
     
 
-    public static function connect(){
+    public static function connected(){
         if(is_bool(self::$connected)) return self::$connected;
         try {
             self::$connected = self::$connected?:R::testConnection();
             if(!self::$connected){
                 throw new Exception("Cannot connect to the database please run R::setup() before calling a model.");
+                exit(1);
             }
+            self::register();
         }
         catch (Exception $ex) {
             print $ex->getMessage() . PHP_EOL;
             exit(1);
         }
+        return self::$connected;
     }
+    
 
-
-    
-    
-    
     public static function register(){
         if(R::getRedBean()->getBeanHelper() instanceof self) return;
         R::getRedBean()->setBeanHelper(new self);

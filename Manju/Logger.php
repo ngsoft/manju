@@ -7,7 +7,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\ErrorHandler;
-use Monolog\Handler\NullHandler;
+
 
 
 /**
@@ -16,22 +16,22 @@ use Monolog\Handler\NullHandler;
 @define('MANJU_LOG_FILE', null);
 @define('MANJU_DEBUG', false);
 
+
 /**
- * Logger needs Monolog
+ * Logger needs Monolog and Psr\Log
  * dependency check
  */
-
-if(!class_exists('Monolog\\Logger') or !class_exists("Psr\\Log\\LoggerInterface")){
+if(!class_exists('\\Monolog\\Logger') or !interface_exists("\\Psr\\Log\\LoggerInterface")){
     return;
 }
 
 /**
+ * Hybrid Logger/Handler/Formatter
  * Sends and gets logs from monolog
  */
 class Logger extends AbstractProcessingHandler implements LoggerInterface, \JsonSerializable{
     
     use \Psr\Log\LoggerTrait;
-    
     const LOG_FORMAT = '[%datetime% | %channel% | %level_name%] %message%';
     
     private static $monolog;
