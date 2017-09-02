@@ -11,15 +11,10 @@ use RedBeanPHP\Facade as R;
  * Constants used
  */
 @define('MANJU_CREATED_COLUMN', 'created_at');
-@define('MANJU_UPDATED_COLUMN', 'created_at');
-
+@define('MANJU_UPDATED_COLUMN', 'updated_at');
 
 
 class Bun extends SimpleModel{
-    /**
-     * Logger
-     */
-    use \Psr\Log\LoggerTrait;
     
     //===============       Configurable Properties        ===============//
     
@@ -173,17 +168,10 @@ class Bun extends SimpleModel{
     }
 
     
-    protected function log($level, $message, array $context = []){
-        if(!self::$logger){
-            if(class_exists('Manju\\Loader')) self::$logger = new Logger();
-        }
-        if(self::$logger) self::$logger->$level($message,$context);
-    }
-
+    
+    
+    
     
     
 
-
-
-    
 }
