@@ -13,8 +13,9 @@ $l->register();
 R::setup(sprintf('sqlite:%s',__DIR__ . '/data/example.db'));
 R::debug(true);
 
-//Manju\Logger::setDebug(true);
-define('MANJU_DEBUG',true);
+Manju\Logger::setDebug(true);
+Manju\Logger::setLogFile('test.log');
+//define('MANJU_DEBUG',true);
 
 
 class Obj implements Serializable{

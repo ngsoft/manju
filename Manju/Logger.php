@@ -20,6 +20,8 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
     
     use \Psr\Log\LoggerTrait;
     
+    const LOG_FORMAT = '[%datetime% | %channel% | %level_name%] %message%';
+    
     private static $monolog;
     private static $setup = false;
     private static $debug = false;
@@ -45,7 +47,7 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
         $handlers = [];
         if(self::$logfile){
             $stream = new StreamHandler(self::$logfile);
-            $stream->setFormatter(new LineFormatter("[ %channel% on %datetime% ] : %level_name% > %message%\n", DateTime::DB));
+            $stream->setFormatter(new LineFormatter(self::LOG_FORMAT . PHP_EOL,DateTime::DB));
             $handlers[] = $stream;
         }
         //R::debug(true)
@@ -73,7 +75,7 @@ class Logger extends AbstractProcessingHandler implements \Psr\Log\LoggerInterfa
         $this->ishandler = $ishandler;
         if($ishandler){
             parent::__construct(Monolog::DEBUG, true);
-            $this->setFormatter(new LineFormatter('[%datetime%][ %level_name% ][ %channel% ] %message%','H:i:s'));
+            $this->setFormatter(new LineFormatter(self::LOG_FORMAT,'H:i:s'));
         }
     }
     
