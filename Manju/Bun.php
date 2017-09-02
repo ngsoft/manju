@@ -183,6 +183,8 @@ abstract class Bun extends SimpleModel{
      * Initialize the bean with defaults values
      */
     private function initialize_bean(){
+        $this->initialize(false);
+        
         if($this->savetimestamps){
             foreach ([MANJU_CREATED_COLUMN, MANJU_UPDATED_COLUMN] as $prop){
                 $this->setColumnType($prop, 'datetime');
@@ -204,17 +206,14 @@ abstract class Bun extends SimpleModel{
         }
         
     }
-
-
-
-
-
+    
     /**
      * Class constructor
      * @param mixed $bean
      */
     private function initialize($bean = null){
         if(BunHelper::connected()){
+            //reset properties
             $this->tainted = false;
             $this->properties = [];
             $this->cansave = true;
@@ -236,21 +235,99 @@ abstract class Bun extends SimpleModel{
         }        
     }
     
+    //===============       Plugins Support        ===============//
+ 
+    /**
+     * Access the plugins
+     * @return \stdClass
+     */
+    public function plugins(){
+        if(!is_object(self::$plugins)){
+            self::$plugins = new \stdClass();
+        }
+        return self::$plugins;
+    }
     
+    /**
+     * Add a plugin accessible to all the models
+     * @param type $instance Plugin Object
+     * @param string $friendly_name name for the plugin to be accessed $this->plugins()->friendly_name If not set will use lowercase class basename
+     * @return $this
+     */
+    public function addPlugin($instance, string $friendly_name = null){
+        if(!is_object($instance)){
+            return $this;
+        }
+        if(!$friendly_name){
+            $friendly_name = (new \ReflectionClass($instance))->getShortName();
+            $friendly_name = strtolower($friendly_name);
+        }
+        $this->plugins()->$friendly_name = $instance;
+        return $this;
+    }
+    
+    //===============       Bun       ===============//
+    
+    /**
+     * Set type for column
+     * @param string $prop Column name
+     * @param string $type valid php scallar type
+     * @return bool
+     */
+    protected function setColumnType(string $prop, string $type): bool{
+        //type is alias?
+        if(isset(self::$types_alias[$type])) $type = self::$types_alias[$type];
+        //type exists?
+        if(!in_array($type, self::$valid_types)){
+            $this->debug("Trying to set invalid type $type for column $prop in " . get_class($this));
+            return false;
+        }
+        self::$columns[get_class($this)][$prop] = $type;
+        return true;
+    }
+    
+    /**
+     * Get the declared type for a column
+     * @param string $prop Column name
+     * @return string|null
+     */
+    protected function getColumnType(string $prop){
+        return isset(self::$columns[get_class($this)][$prop])?self::$columns[get_class($this)][$prop]:null;
+    }
+    
+    /**
+     * 
+     * @param string $prop
+     * @param type $defaults
+     * @return bool
+     */
+    protected function setColumnDefaults(string $prop, $defaults = null): bool{
+        if(is_null($defaults)) return false;
+        self::$defaults[get_class($this)][$prop] = $defaults;
+        return true;
+    }
+
+    
+
+
+
+
+
+
+
+
+
     //===============       RedBeanPHP\SimpleModel Overrides        ===============//
 
 
 
     public function __get($prop) {
-        return parent::__get($prop);
     }
 
     public function __isset($key) {
-        return parent::__isset($key);
     }
 
     public function __set($prop, $value){
-        parent::__set($prop, $value);
     }
     
     public function __unset($prop) {
@@ -266,12 +343,11 @@ abstract class Bun extends SimpleModel{
     }
 
     /**
-     * Used by BeanHelper to import a bean into SimpleModel
+     * Used by BeanHelper/BunHelper to import a bean into SimpleModel
      * @param OODBBean $bean
      * @return $this
      */
     public function loadBean(OODBBean $bean){
-        $this->initialize(false);
         $this->bean = $bean;
         $this->initialize_bean();
         return $this;
