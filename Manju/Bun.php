@@ -296,18 +296,222 @@ abstract class Bun extends SimpleModel{
     }
     
     /**
-     * 
-     * @param string $prop
-     * @param type $defaults
+     * Set default value for a column
+     * @param string $prop Column name
+     * @param type $defaults default value (can be a callable)
      * @return bool
      */
-    protected function setColumnDefaults(string $prop, $defaults = null): bool{
+    protected function setColumnDefaults(string $prop, $defaults): bool{
         if(is_null($defaults)) return false;
         self::$defaults[get_class($this)][$prop] = $defaults;
         return true;
     }
-
     
+    /**
+     * Get the declared default value for a column
+     * @param string $prop
+     * @return mixed
+     */
+    protected function getColumnDefaults(string $prop){
+        return array_key_exists($prop, self::$defaults[get_class($this)])?self::$defaults[get_class($this)][$prop]:null;
+    }
+    
+    /**
+     * Add alias to Bun
+     * @param string $alias Alias to use
+     * @param string $target Column or list to point to
+     * @return $this
+     */
+    protected function addAlias(string $alias, string $target){
+        if($alias == $target){
+            $this->debug("Trying to set alias $alias to $target in ".get_class($this));
+        }
+        else self::$alias[get_class ($this)][$alias] = $target;
+        return $this;
+    }
+    
+    /**
+     * Get the target from an alias
+     * @param string $alias
+     * @return string
+     */
+    protected function getAliasTarget(string $alias): string{
+        return isset(self::$alias[get_class($this)][$alias])?self::$alias[get_class($this)][$alias]:$alias;
+    }
+    
+    
+    /**
+     * Add a managed column
+     * @param string $prop Column name
+     * @param string $type Column type
+     * @param type $defaults Column Default
+     * @return $this
+     */
+    protected function addCol(string $prop, string $type = null, $defaults = null){
+        if(!is_null($type)) $this->setColumnType ($prop, $type);
+        if(!is_null($defaults)) $this->setColumnDefaults ($prop, $defaults);
+        if(is_null($type) and is_null($defaults)){
+            $this->debug("Trying to set a managed column with no type and no default value (one parameter must be set) in ".get_class($this));
+        }
+        return $this;
+    }
+    
+    /**
+     * Add a required column, if value is null on store, store will be cancelled
+     * @param string $prop Column name
+     * @return $this
+     */
+    protected function addRequired(string $prop){
+        self::$required[get_class($this)][] = $prop;
+        return $this;
+    }
+    
+    /**
+     * Get list of required columns
+     * @return array
+     */
+    protected function getRequiredCols():array{
+        return self::$required[get_class($this)];
+    }
+    
+    /**
+     * Check if all required columns are set
+     * @return bool
+     */
+    protected function checkRequired():bool{
+        foreach ($this->getRequiredCols() as $prop){
+            if(is_null($this->bean->$prop)){
+                $this->debug("Required column $prop set to null value in ".get_class($this));
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Convert data from the bean to the user
+     * @param string $prop
+     * @param type $val
+     * @return mixed
+     */
+    protected function convertForGet(string $prop, $val){
+        
+        if($type = $this->getColumnType($prop)){
+            switch ($type){
+                case"integer":
+                    $val = intval($val);
+                    break;
+                case "double":
+                    $val = floatval($val);
+                    break;
+                case "boolean":
+                    $val = boolval((int)$val);
+                    break;
+                case "array":
+                case "object":
+                    $val = $this->b64unserialize($val);
+                    break;
+                case "datetime":
+                    $val = new DateTime($val);
+            }
+        }
+        return $val;
+    }
+    
+    /**
+     * Convert data from the user to the bean
+     * @param string $prop
+     * @param type $val
+     * @return type
+     */
+    protected function convertForSet(string $prop, $val){
+        
+        //datetime detection
+        if($val instanceof \DateTime){
+            $val = $val->format(DateTime::DB);
+            return $val;
+        }
+        if($this->getColumnType($prop) == 'datetime'){
+            if(is_int($val)){
+                $val = date(DateTime::DB, $val);
+                return $val;
+            }
+            if(is_string($val)){
+                $dt = new DateTime($val);
+                if($value = $dt->format()){
+                    return $value;
+                }
+                else{
+                    $this->debug("Value $val for column $prop seems to be an incorrect datetime value in " . get_class($this));
+                    return null;
+                }
+            }
+        }
+        //as it's not declared we cannot retrieve the formated value except for the use of formatters
+        if(!$this->getColumnType($prop)){
+            return $val;
+        }
+        
+        $type = gettype($val);
+        if($type != $this->getColumnType($prop)){
+            $this->debug(sprintf("value type declared as %s for column $prop seems to be incorrect ( $type ) in %s", $this->getColumnType($prop), get_class($this)));
+            return null;
+        }
+        switch ($type){
+            case"integer":
+                break;
+            case "double":
+                $val = "$val";
+                break;
+            case "boolean":
+                $val = $val?1:0;
+                break;
+            case "array":
+            case "object":
+                $val = $this->b64serialize($val);
+                break;
+        }  
+        return $val;
+    }
+
+
+
+
+    /**
+    * Serialize and encode string to base 64 
+    * \Serializable Objects and arrays will be saved into that format into the database
+    * @param type $value
+    * @return string
+    */
+    public function b64serialize($value): string{
+        if(is_object($value)){
+            if(!($value instanceof \Serializable)){
+                $value = '';
+                return $value;
+            }
+        }
+        $value = serialize($value);
+        $value = base64_encode($value);
+        return $value;
+    }
+    
+    /**
+     * Unserialize a base 64 serialized string
+     * will return \Serializable Objects or array
+     * @param type $str
+     * @return array or object
+     */
+    public function b64unserialize(string $str = null){
+        $obj = null;
+        if(!empty($str)){
+            $str = base64_decode($str);
+            $obj = unserialize($str);   
+        }
+        return $obj;
+    }
+
+
+
 
 
 
