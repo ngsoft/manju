@@ -87,7 +87,7 @@ class Bun extends SimpleModel{
     
 
     public function __construct() {
-        $this->notice('test');
+        $this->debug('test');
     }
 
     public function __get($prop) {
