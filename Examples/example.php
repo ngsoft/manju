@@ -13,6 +13,8 @@ $l->register();
 R::setup(sprintf('sqlite:%s',__DIR__ . '/data/example.db'));
 R::debug(true);
 
+//Manju\Logger::setDebug(true);
+define('MANJU_DEBUG',true);
 
 
 class Obj implements Serializable{
@@ -36,7 +38,7 @@ class Obj implements Serializable{
 }
 
 $p = new Examples\models\product();
-$s = new Examples\models\shop();
+//$s = new Examples\models\shop();
 //$s = new Examples\models\shop();
 /*
 $p->t = new Obj;

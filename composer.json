@@ -18,8 +18,10 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
-        "gabordemooij/redbean": "^4.3"
+        "php": ">=5.6.0",
+        "gabordemooij/redbean": "^4.3",
+        "psr/log": "^1.0",
+        "monolog/monolog": "^1.23"
     },
     "autoload": {
         "psr-4": {
