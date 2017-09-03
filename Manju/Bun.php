@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
 @define('MANJU_UPDATED_COLUMN', 'updated_at');
 
 
-abstract class Bun extends SimpleModel{
+abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable{
     
     //===============       Configurable Properties        ===============//
     
@@ -371,7 +371,7 @@ abstract class Bun extends SimpleModel{
     }
     
     /**
-     * Add a required column, if value is null on store, store will be cancelled
+     * Add a required column, if value is null on store(), store() will be cancelled
      * @param string $prop Column name
      * @return $this
      */
@@ -655,11 +655,13 @@ abstract class Bun extends SimpleModel{
         if(!$this->bean or !$this->cansave) return $this;
         $this->updateTainted();
         $this->addTimestamps();
-        
         if($this->checkRequired()){
             R::store($this->bean);
             if($fresh) return $this->fresh ();
             else $this->initialize(false);
+        }
+        else{
+            $this->debug("Trying to store a bean with not all the required columns set in " . get_class($this) . " store() process halted.");
         }
         return $this;
     }    
@@ -784,14 +786,149 @@ abstract class Bun extends SimpleModel{
      * @return RedBeanPHP\OODBBean
      */
     public function unbox(){
+        $this->bean or $this->create();
         return $this->bean;
     }
 
+    //===============       RedBean SQL (shortcuts)        ===============//
+    
+    /**
+     * Finds a bun using a type and a where clause (SQL).
+     * As with most Query tools in RedBean you can provide values to
+     * be inserted in the SQL statement by populating the value
+     * array parameter; you can either use the question mark notation
+     * or the slot-notation (:keyname).
+     *
+     * @param string $sql      sql    SQL query to find the desired bean, starting right after WHERE clause
+     * @param array  $bindings values array of values to be bound to parameters in query
+     *
+     */
+    public function find(string $sql = null, array $bindings = []){
+        count(self::$columns) or $this->initialize(false);
+        $r = [];
+        if($rb = R::find($this->beantype(),$sql,$bindings)){
+            $r = $this->createPlate($rb);
+        }
+        return $r?:$rb;
+    }
 
+    /**
+     * @see Facade::find
+     * This variation returns the first bun only.
+     *
+     * @param string $sql      sql    SQL query to find the desired bean, starting right after WHERE clause
+     * @param array  $bindings values array of values to be bound to parameters in query
+     * @return Manju\Bun|RedbeanPHP\OODBBean
+     */
+    public function findOne($sql = null, array $bindings = []){
+        count(self::$columns) or $this->initialize(false);
+        $r = null;
+        if($rb = R::findOne($this->beantype(),$sql,$bindings)){
+            $r = $rb->getMeta('model');
+        }
+        return $r?:$rb;
+    }
 
+    /**
+     * @see Facade::find
+     *      The findAll() method differs from the find() method in that it does
+     *      not assume a WHERE-clause, so this is valid:
+     *
+     * R::findAll('person',' ORDER BY name DESC ');
+     *
+     * Your SQL does not have to start with a valid WHERE-clause condition.
+     *
+     * @param string $sql      sql    SQL query to find the desired bun, starting right after WHERE clause
+     * @param array  $bindings values array of values to be bound to parameters in query
+     * @return array
+     */
+    public function findAll($sql = null, array $bindings = []){
+        count(self::$columns) or $this->initialize(false);
+        $r = [];
+        if($rb = R::findAll($this->beantype(), $sql, $bindings)){
+            $r = $this->createPlate($rb);
+        }
+        return $r?:$rb;
+    }
+    
+    /**
+     * Convenience function to execute Queries directly.
+     * Executes SQL.
+     *
+     * @param string $sql       sql    SQL query to execute
+     * @param array  $bindings  values a list of values to be bound to query parameters
+     *
+     * @return integer
+     */
+    public function exec($sql = null, array $bindings = []):int{
+        count(self::$columns) or $this->initialize(false);
+        return R::exec($sql, $bindings);
+    }
+    
+    /**
+     * Convenience function to execute Queries directly.
+     * Executes SQL.
+     *
+     * @param string $sql       sql    SQL query to execute
+     * @param array  $bindings  values a list of values to be bound to query parameters
+     *
+     * @return array
+     */
+    public function getAll($sql = null, array $bindings = []):array{
+        count(self::$columns) or $this->initialize(false);
+        return R::getAll($sql, $bindings);
+    }
     
     
+    /**
+     * Gets the last insert id
+     * @return int
+     */
+    public function getInsertID(): int{
+        count(self::$columns) or $this->initialize(false);
+        return R::getInsertID();
+    }    
+
     //===============       Bun Utils        ===============//
+    
+    /**
+     * Gets an array of Bun corresponding to a One to Many or Many to Many relationship
+     * @param string $prop
+     * @return array
+     */
+    public function getPlate(string $prop): array{
+        $this->bean or $this->create();
+        $prop = $this->getAliasTarget($prop);
+        $return = [];
+        if($val = $this->bean->$prop){
+            if(is_array($val) and preg_match(self::TO_MANY_LIST, $prop)){
+                $return = $this->createPlate($val);
+            }
+        }
+        return $return;
+    }    
+    
+    
+    
+    /**
+     * Convert an array of bean to an array of bun
+     * @param array $data
+     * @return array
+     */
+    protected function createPlate(array $data): array{
+        $r = [];
+        foreach ($data as $id => &$bean){
+            if(!($bean instanceof OODBBean)) continue;
+            if($bun = $bean->getMeta('model') and $bun instanceof Bun){
+                $r[$id] = $bun;
+            }
+            else $r[$id] = $bean;
+        }
+        return $r;
+    }    
+    
+    
+    
     /**
      * Defines the bean type using the class basename
      * 
@@ -894,7 +1031,50 @@ abstract class Bun extends SimpleModel{
         if(self::$logger) self::$logger->$level($message,$context);
     }
     
-    
-    
+    //===============       Interfaces        ===============//
+
+    //IteratorAgregate
+    public function getIterator(){
+        return new \ArrayIterator($this->export());
+    }
+    //Countable
+    public function count(){
+        return count($this->export());
+    }
+    //ArrayAccess
+    public function offsetExists($prop){
+        return $this->__isset($prop);
+    }
+    public function &offsetGet($prop){
+        $val = $this->__get($prop);
+        return $val;
+    }
+    public function offsetSet($prop, $val){
+        $this->__set($prop,$val);
+    }
+    public function offsetUnset($propt){
+        $this->__unset($propt);
+    }
+    //JsonSerializable
+    public function jsonSerialize() {
+        $data = $this->export();
+        $return = [];
+        
+        foreach($data as $prop => $val){
+            if(is_object($val)){
+                if($val instanceof \JsonSerializable) $val = $val->jsonSerialize ();
+                else{
+                    //try to get most values
+                    $val = json_decode(json_encode($val),true);
+                }
+            }
+            $return[$prop] = $val;
+        }
+        return $return;
+    }
+    //jsonable
+    public function __toString() {
+        return json_encode($this, JSON_PRETTY_PRINT);
+    }
 
 }
