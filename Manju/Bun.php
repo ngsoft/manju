@@ -161,7 +161,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param null $bean Creates a fresh bean
      * @return $this
      */
-    public function __invoke($bean = null){
+    public function __invoke($bean = null):bun{
         $this->initialize($bean);
         return $this;
     }
@@ -350,7 +350,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return string
      */
     protected function getAliasTarget(string $alias): string{
-        return isset(self::$alias[get_class($this)][$alias])?self::$alias[get_class($this)][$alias]:$alias;
+        
+        $a = &self::$alias[get_class($this)];
+        //try findidng alias of alias
+        while (isset($a[$alias])){
+            $alias = $a[$alias];
+        }
+        return $alias;
     }
     
     
@@ -499,10 +505,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             if($val instanceof \DateTime){
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
+                $this->debug("updating datetime value for $prop in " . get_class($this));
             }
             elseif($this->getColumnType($prop) == gettype($val) and is_object($val)){
+                $this->debug("updating serializable object ".get_class($val)." for prop $prop in " . get_class($this));
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
+                
             }
         }
     }
@@ -532,6 +541,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function b64serialize($value): string{
         if(is_object($value)){
             if(!($value instanceof \Serializable)){
+                $this->debug("trying to serialize unserializable objet " . get_class($value) . " in " . get_class($this));
                 $value = '';
                 return $value;
             }
@@ -635,7 +645,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     final public function trash(){
         if(!$this->bean) return $this;
         R::trash($this->bean);
-        return $this;
+        return $this->create();
     }
     
     /**
@@ -652,7 +662,11 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return $this
      */
     final public function store(bool $fresh = false){
-        if(!$this->bean or !$this->cansave) return $this;
+        if(!$this->bean or !$this->cansave){
+            if(!$this->cansave) $this->debug("trying to store a bean with cansave flag set to false in " . get_class($this));
+            else $this->debug ("trying to store a non existing bean, store() process halted in ". get_class($this));
+            return $this;
+        }
         $this->updateTainted();
         $this->addTimestamps();
         if($this->checkRequired()){
@@ -731,6 +745,8 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                 }
             }
             if(!is_array($val)) return;
+            $this->bean->$prop = $val;
+            return;
         }
         if(is_null($val) and $val = $this->getColumnDefaults($prop)){
             if(is_callable($val)){
@@ -745,6 +761,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             }
             $this->properties[$prop] = $val;
             $val = $this->convertForSet($prop, $val);
+        }
+        //last check
+        else{
+            if(is_array($val) or is_object($val) or is_resource($val)){
+                $this->debug("Trying to set value for non managed column with a type of " . gettype($val) . " for the property $prop in " . get_class($this) . ", value changed to NULL");
+                $val = null;
+            }
         }
         $this->bean->$prop = $val;
         
@@ -1001,6 +1024,18 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     protected function error($message, array $context = []){
         $this->log('error', $message, $context);
+    }
+    
+    /**
+     * Normal but significant events.
+     *
+     * @param string $message
+     * @param array  $context
+     *
+     * @return void
+     */
+    public function notice($message, array $context = array()){
+        $this->log('notice', $message, $context);
     }
 
     /**
