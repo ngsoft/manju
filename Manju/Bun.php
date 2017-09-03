@@ -352,7 +352,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     protected function getAliasTarget(string $alias): string{
         
         $a = &self::$alias[get_class($this)];
-        //try findidng alias of alias
+        //try finding alias of alias
         while (isset($a[$alias])){
             $alias = $a[$alias];
         }
@@ -658,6 +658,9 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     /**
      * Stores the bean into the database
+     * trigger $this->update() before writing into the database
+     * trigger $this->after_update() after
+     * 
      * @param bool $fresh Refresh the bean with saved data
      * @return $this
      */
@@ -793,7 +796,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     }
 
     /**
-     * Used by BeanHelper/BunHelper to import a bean into SimpleModel just before $this->dispense()
+     * Used by BeanHelper/BunHelper to import a bean into SimpleModel and the same SimpleModel into the bean just before $this->dispense()
      * @param OODBBean $bean
      * @return $this
      */

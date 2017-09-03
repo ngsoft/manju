@@ -19,7 +19,7 @@ use Monolog\ErrorHandler;
 
 /**
  * Logger needs Monolog and Psr\Log
- * dependency check
+ * :dependency check
  */
 if(!class_exists('\\Monolog\\Logger') or !interface_exists("\\Psr\\Log\\LoggerInterface")){
     return;
