@@ -129,7 +129,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     private $properties = [];
     
     /**
-     * Does array or obj gets accessed?
+     * Does obj gets accessed?
      * @var bool
      */
     private $tainted = false;
