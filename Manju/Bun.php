@@ -941,7 +941,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param array $data
      * @return array
      */
-    protected function createPlate(array $data): array{
+    public function createPlate(array $data): array{
         $r = [];
         foreach ($data as $id => &$bean){
             if(!($bean instanceof OODBBean)) continue;
