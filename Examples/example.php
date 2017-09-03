@@ -40,12 +40,15 @@ $p = new Examples\models\product(1);
 //$s = new Examples\models\shop();
 
 //$p->t = new Obj;
-/*
+
 $p->brand = "Samsung";
 $p->t->unserialized = [
-    'setting new values works on store'
-];*/
+    'setting new values works on store',
+    'setting another'
+];
+$p->price = "error string";
 
-//$p->store();
-print_r($p);
+$p->store();
+
+print($p);
 //print_r($p->findAll());

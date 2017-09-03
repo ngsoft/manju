@@ -740,7 +740,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         
         if($ctype = $this->getColumnType($prop)){
             if($ctype != gettype($val)){
-                $this->debug("Trying to set value with type ".gettype($val)." configured as $type in " . get_class($this));
+                $this->debug("Trying to set value with type ".gettype($val)." configured as $ctype in " . get_class($this));
                 return;
             }
             $this->properties[$prop] = $val;

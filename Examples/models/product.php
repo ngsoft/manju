@@ -10,6 +10,7 @@ class product extends \Manju\Bun{
         $this   ->addCol('test', 'object')
                 ->addAlias('t', 'test')
                 ->addAlias('s', 'shop')
+                ->addCol('price','float')->addRequired('price')
                 ->addPlugin(new \Obj())
                 ->addRequired("brand");
         $this->plugins()->obj->test = "can access property like that.";
