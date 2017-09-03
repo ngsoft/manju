@@ -208,10 +208,7 @@ abstract class Bun extends SimpleModel{
         //set defaults values to bean using the filter
         foreach (self::$defaults[get_class($this)] as $prop => $val){
             if(is_null($this->bean->$prop)){
-                if(is_callable($val)){
-                    $val = $val();
-                }
-                $this->$prop = $val;
+                $this->$prop = null;
             }
         }
         
@@ -503,7 +500,7 @@ abstract class Bun extends SimpleModel{
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
             }
-            elseif($this->getColumnType($prop) != gettype($val)){
+            elseif($this->getColumnType($prop) == gettype($val) and is_object($val)){
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
             }
@@ -672,18 +669,94 @@ abstract class Bun extends SimpleModel{
     //===============       RedBeanPHP\SimpleModel Overrides        ===============//
 
 
-
-    public function __get($prop) {
+    public function &__get($prop) {
+        $this->bean or $this->create();
+        $prop = $this->getAliasTarget($prop);
+        $val = $this->bean->$prop;
+        if($prop == 'id'){
+            return $val;
+        }
+        if(is_array($val) and preg_match(self::TO_MANY_LIST, $prop)){
+            $val = &$this->bean->$prop;
+            return $val;
+        }
+        if($val instanceof OODBBean){
+            if($bun = $val->getMeta('model')){
+                return $bun;
+            }
+            return $val;
+        }
+        if(array_key_exists($prop, $this->properties)){
+            $val = $this->properties[$prop];
+        }
+        elseif($this->getColumnType($prop)){
+            $val = $this->convertForGet($prop, $val);
+        }
+        if(is_object($val)){
+            $this->tainted = true;
+        }
+        
+        $method = "get_$prop";
+        if(method_exists($this, $prop)){
+            $val = $this->$method($val);
+        }
+        $this->properties[$prop] = $val;
+        return $val;
     }
 
-    public function __isset($key) {
+
+    public function __isset($prop) {
+        $this->bean or $this->create();
+        return isset($this->bean->$prop);
     }
 
-    public function __set($prop, $value){
+    public function __set($prop, $val){
+        $this->bean or $this->create();
+        $prop = $this->getAliasTarget($prop);
+        if($prop == 'id') return;
+        $method = "set_$prop";
+        if(method_exists($this, $method)){
+            $val = $this->$method($val);
+        }
+        if($val instanceof Bun){
+            $val = $val->unbox();
+        }
+        if(preg_match(self::TO_MANY_LIST, $prop)){
+            if(is_object($val)){
+                if($val instanceof OODBBean or $val instanceof SimpleModel){
+                    $this->bean->{$prop}[] = $val;
+                    return;
+                }
+            }
+            if(!is_array($val)) return;
+        }
+        if(is_null($val) and $val = $this->getColumnDefaults($prop)){
+            if(is_callable($val)){
+                $val = $val();
+            }
+        }
+        
+        if($ctype = $this->getColumnType($prop)){
+            if($ctype != gettype($val)){
+                $this->debug("Trying to set value with type ".gettype($val)." configured as $type in " . get_class($this));
+                return;
+            }
+            $this->properties[$prop] = $val;
+            $val = $this->convertForSet($prop, $val);
+        }
+        $this->bean->$prop = $val;
+        
     }
     
     public function __unset($prop) {
-        
+        if(!$this->bean) return;
+        if(!is_null($this->bean->$prop)){
+            if(is_array($this->bean->$prop)){
+                $this->bean->$prop = [];
+                return;
+            }
+        }
+        $this->$prop= null;
     }
 
     /**
