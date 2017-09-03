@@ -12,6 +12,26 @@ class product extends \Manju\Bun{
                 ->addAlias('s', 'shop');
         $this->addPlugin(new \Obj());
         $this->plugins()->obj->test = "can access property like that.";
+        $this->addRequired("brand");
+    }
+    
+    public function dispense() {
+        print __METHOD__.PHP_EOL;
+    }
+    public function open(){
+        print __METHOD__.PHP_EOL;
+    }
+    public function update() {
+        print __METHOD__.PHP_EOL;
+    }
+    public function after_update() {
+        print __METHOD__.PHP_EOL;
+    }
+    public function delete() {
+        print __METHOD__.PHP_EOL;
+    }
+    public function after_delete() {
+        print __METHOD__.PHP_EOL;
     }
     
 

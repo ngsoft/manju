@@ -39,3 +39,7 @@ class Obj implements Serializable{
 $p = new Examples\models\product();
 //$s = new Examples\models\shop();
 
+$p->t = new Obj;
+
+$p->store();
+print_r($p);

@@ -78,7 +78,7 @@ class BunHelper extends SimpleFacadeBeanHelper{
     public function getModelForBean(OODBBean $bean) {
         $model = $bean->getMeta( 'type' );
         if(self::getCaster()){
-            if($type == self::getCaster()->beantype()){
+            if($model == self::getCaster()->beantype()){
                 $obj = self::getCaster();
                 $obj->loadBean($bean);
             }

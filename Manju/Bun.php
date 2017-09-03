@@ -213,7 +213,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         }
         
         //initialize required values to null into the bean
-        foreach (self::$required as $prop){
+        foreach ($this->getRequiredCols() as $prop){
             if(is_null($this->bean->$prop)){
                 $this->bean->$prop = null;
             }
@@ -661,7 +661,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             else $this->initialize(false);
         }
         else{
-            $this->debug("Trying to store a bean with not all the required columns set in " . get_class($this) . " store() process halted.");
+            $this->debug("Trying to store a bean with not all the required columns set in " . get_class($this) . "\\store(), process halted.");
         }
         return $this;
     }    

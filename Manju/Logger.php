@@ -94,7 +94,7 @@ class Logger extends AbstractProcessingHandler implements LoggerInterface, \Json
     
     protected function write(array $record){
 
-        $this->log[$record['channel']][$record['level_name']] = [
+        $this->log[$record['channel']][$record['level_name']][] = [
             'date'      =>  $record['datetime']->format(DateTime::DB),
             'message'   =>  $record['message'],
             'context'   =>  $record['context'],
