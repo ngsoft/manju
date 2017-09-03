@@ -26,7 +26,7 @@ class shop extends \Manju\Bun{
         if(!preg_match('/^[a-z\ ]+$/i', $city)){
             $this->cansave = false;
             //logging
-            $this->error("validation error for city in ".$this->beantype());
+            $this->error("validation error : incorrect value for city for ".$this->beantype());
         }
         return $city;
     }
