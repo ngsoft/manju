@@ -134,6 +134,15 @@ abstract class Bun extends SimpleModel{
      */
     private $tainted = false;
     
+
+    
+    //=============== FUSE Methods that can be extended into models ===============//
+    public function dispense() {}
+    public function open(){}
+    public function update() {}
+    public function after_update() {}
+    public function delete() {}
+    public function after_delete() {}
     
     
     //===============       Model Initialization        ===============//
@@ -143,7 +152,6 @@ abstract class Bun extends SimpleModel{
      * Get run once at the first load of the model
      */
     abstract protected function configure();
-    
     
     
     /**
@@ -158,8 +166,14 @@ abstract class Bun extends SimpleModel{
         return $this;
     }
     
-    
-    final public function __construct() {
+    /**
+     * Creates or load a new bean
+     * @param int $bean id of the bean
+     * @param array $bean Array to import into the bean
+     * @param null|bool $bean Do nothing (prevent loops)
+     */
+    final public function __construct($bean = null) {
+        $bean = is_null($bean)?false:$bean;
         $this->initialize(false);
     }
 
@@ -192,8 +206,11 @@ abstract class Bun extends SimpleModel{
         }
         
         //set defaults values to bean using the filter
-        foreach (self::$defaults[get_called_class()] as $prop => $val){
+        foreach (self::$defaults[get_class($this)] as $prop => $val){
             if(is_null($this->bean->$prop)){
+                if(is_callable($val)){
+                    $val = $val();
+                }
                 $this->$prop = $val;
             }
         }
@@ -473,8 +490,40 @@ abstract class Bun extends SimpleModel{
         }  
         return $val;
     }
+    
+    /**
+     * Update objects or array if they gets accessed
+     * before using store()
+     */
+    protected function updateTainted(){
+        if(!$this->tainted) return;
+        foreach ($this->properties as $prop => $val){
+            if(!$this->getColumnType($prop)) continue;
+            if($val instanceof \DateTime){
+                $val = $this->convertForSet($prop, $val);
+                $this->bean->$prop = $val;
+            }
+            elseif($this->getColumnType($prop) != gettype($val)){
+                $val = $this->convertForSet($prop, $val);
+                $this->bean->$prop = $val;
+            }
+        }
+    }
 
+    /**
+     * Add MANJU_CREATED_COLUMN and MANJU_UPDATED_COLUMN
+     * @return type
+     */
+    private function addTimestamps(){
+        if(!$this->savetimestamps) return;
+        $date = date(DateTime::DB);
+        $created = MANJU_CREATED_COLUMN;
+        $updated = MANJU_UPDATED_COLUMN;
+        $this->bean->$created = $this->bean->$created?:$date;
+        $this->bean->$updated = $date;
+    }
 
+    
 
 
     /**
@@ -509,17 +558,116 @@ abstract class Bun extends SimpleModel{
         }
         return $obj;
     }
+    
+    //===============       Import/Export        ===============//
+    
+    /**
+     * Import $data into Bean
+     * @param array $data
+     */
+    public function import(array $data){
+        if(!count($data)) return;
+        
+        if(isset($data['$id'])) $this->load($data['id']);
+        else $this->create ();
+        
+        foreach ($data as $prop => $val){
+            if(is_int($prop) or is_null($prop)) continue;
+            //convert data
+            $this->$prop = $val;
+        }
+    }    
 
+    /**
+     * Export data from bean
+     * @param bool $convert convert data using schema
+     * @return array
+     */
+    public function export(bool $convert = true): array{
+        $export = [];
+        $this->bean or $this->create();
+        $properties = array_merge($this->bean->getMeta('sys.orig'), $this->bean->getProperties());
+        
+        foreach ($properties as $prop => $val){
+            //owned/shared lists are array, they won't be exported
+            if(is_array($val)) continue;
+            //to one are beans
+            if($val instanceof OODBBean) continue;
+            //we use the converter like this
+            if($convert) $export[$prop] = $this->$prop;
+            else $export[$prop] = $val;
+        }
+        return $export;
+    }
+    //===============       RedBeanPHP CRUD        ===============//
+    
+    /**
+     * Create a new empty bean
+     * trigger $this->dispense()
+     * 
+     * @return $this
+     */
+    final public function create(){
+        $this->bean = null;
+        BunHelper::dispense($this);
+        return $this;
+    }
+    
+    /**
+     * Loads a bean with the data corresponding to the id column
+     * trigger $this->dispense() on bean creation
+     * then $this->open after data is loaded
+     * 
+     * @param int $id id field of the bean
+     * @return $this
+     */
+    final public function load(int $id = 0){
+        $this->bean = null;
+        if($id == 0) $this->create ();
+        else BunHelper::load($this, $id);
+        return $this;
+    }
+    
+    /**
+     * Removes a bean from the database
+     * trigger $this->delete() before deleting
+     * trigger $this->after_delete() after
+     * 
+     * @return $this;
+     */
+    final public function trash(){
+        if(!$this->bean) return $this;
+        R::trash($this->bean);
+        return $this;
+    }
+    
+    /**
+     * Reloads data for the current bean from the database
+     * @return $this
+     */
+    final public function fresh(){
+        return $this->load($this->id);
+    }
+    
+    /**
+     * Stores the bean into the database
+     * @param bool $fresh Refresh the bean with saved data
+     * @return $this
+     */
+    final public function store(bool $fresh = false){
+        if(!$this->bean or !$this->cansave) return $this;
+        $this->updateTainted();
+        $this->addTimestamps();
+        
+        if($this->checkRequired()){
+            R::store($this->bean);
+            if($fresh) return $this->fresh ();
+            else $this->initialize(false);
+        }
+        return $this;
+    }    
 
-
-
-
-
-
-
-
-
-
+    
 
     //===============       RedBeanPHP\SimpleModel Overrides        ===============//
 
@@ -547,7 +695,7 @@ abstract class Bun extends SimpleModel{
     }
 
     /**
-     * Used by BeanHelper/BunHelper to import a bean into SimpleModel
+     * Used by BeanHelper/BunHelper to import a bean into SimpleModel just before $this->dispense()
      * @param OODBBean $bean
      * @return $this
      */
