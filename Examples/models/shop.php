@@ -15,14 +15,27 @@ class shop extends \Manju\Bun{
                 
     }
     
+    /**
+     * validator example
+     * @param type $city
+     * @return type
+     */
     protected function set_city($city){
+        //flag that prevent storing the bean
         $this->cansave = true;
         if(!preg_match('/^[a-z\ ]+$/i', $city)){
             $this->cansave = false;
+            //logging
+            $this->error("validation error for city in ".$this->beantype());
         }
         return $city;
     }
     
+    /**
+     * Formatter example
+     * @param type $city
+     * @return type
+     */
     protected function get_city($city){
         $words = explode(" ", $city);
         foreach ($words as &$word){
