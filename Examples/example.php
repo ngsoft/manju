@@ -36,10 +36,16 @@ class Obj implements Serializable{
     
 }
 
-$p = new Examples\models\product();
+$p = new Examples\models\product(1);
 //$s = new Examples\models\shop();
 
-$p->t = new Obj;
+//$p->t = new Obj;
+/*
+$p->brand = "Samsung";
+$p->t->unserialized = [
+    'setting new values works on store'
+];*/
 
-$p->store();
+//$p->store();
 print_r($p);
+//print_r($p->findAll());

@@ -9,10 +9,11 @@ class product extends \Manju\Bun{
     protected function configure() {
         $this   ->addCol('test', 'object')
                 ->addAlias('t', 'test')
-                ->addAlias('s', 'shop');
-        $this->addPlugin(new \Obj());
+                ->addAlias('s', 'shop')
+                ->addPlugin(new \Obj())
+                ->addRequired("brand");
         $this->plugins()->obj->test = "can access property like that.";
-        $this->addRequired("brand");
+        
     }
     
     public function dispense() {

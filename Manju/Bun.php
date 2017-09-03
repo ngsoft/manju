@@ -174,7 +174,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     final public function __construct($bean = null) {
         $bean = is_null($bean)?false:$bean;
-        $this->initialize(false);
+        $this->initialize($bean);
     }
 
 
