@@ -152,7 +152,22 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function delete() {}
     public function after_delete() {}
     
+    //=============== RedBeanPHP\OODBBean Method Access (Reverse FUSE) ===============//
     
+    public function __call($method, $args) {
+        $this->bean or $this->create();
+        if(!method_exists($this->bean, $method)){
+            $this->debug(sprintf("Trying to access unknown method %s->%s().", get_class($this),$method));
+            //let OODBBean handle the error
+        }
+        return call_user_func_array([$this->bean,$method], $args);
+    }
+
+
+
+
+
+
     //===============       Model Initialization        ===============//
     
     /**
