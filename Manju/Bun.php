@@ -14,7 +14,15 @@ use Psr\Log\LoggerInterface;
 @define('MANJU_CREATED_COLUMN', 'created_at');
 @define('MANJU_UPDATED_COLUMN', 'updated_at');
 
-
+/**
+ * Bun
+ * Extension to RedbeanPHP\SimpleModel using FUSE
+ * 
+ * 
+ * 
+ * For use with IDE
+ * @property int $id Bean ID
+ */
 abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable{
     
     //===============       Configurable Properties        ===============//
