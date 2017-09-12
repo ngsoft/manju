@@ -2,6 +2,16 @@
 
 namespace Examples\models;
 
+/**
+ * 
+ * for use with IDE
+ * 
+ * @property array $products List of Products
+ * @property string $name Shop Name
+ * @property string $city Shop city
+ * 
+ * 
+ */
 class shop extends \Manju\Bun{
     
     

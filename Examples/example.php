@@ -64,3 +64,4 @@ $s->store();*/
 
 print_r($s(1)->getPlate('p')[1]->t);
 print($s);
+

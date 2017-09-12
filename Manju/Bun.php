@@ -14,7 +14,15 @@ use Psr\Log\LoggerInterface;
 @define('MANJU_CREATED_COLUMN', 'created_at');
 @define('MANJU_UPDATED_COLUMN', 'updated_at');
 
-
+/**
+ * Bun
+ * Extension to RedbeanPHP\SimpleModel using FUSE
+ * 
+ * 
+ * 
+ * For use with IDE
+ * @property int $id Bean ID
+ */
 abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable{
     
     //===============       Configurable Properties        ===============//
@@ -46,7 +54,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     //===============       Bun Properties        ===============//
     
-    const VERSION = '1.0.1';
+    const VERSION = '1.0.2';
     
     /**
      * Regex to check some values
@@ -144,7 +152,22 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function delete() {}
     public function after_delete() {}
     
+    //=============== RedBeanPHP\OODBBean Method Access (Reverse FUSE) ===============//
     
+    public function __call($method, $args) {
+        $this->bean or $this->create();
+        if(!method_exists($this->bean, $method)){
+            $this->debug(sprintf("Trying to access unknown method %s->%s().", get_class($this),$method));
+            //let OODBBean handle the error
+        }
+        return call_user_func_array([$this->bean,$method], $args);
+    }
+
+
+
+
+
+
     //===============       Model Initialization        ===============//
     
     /**

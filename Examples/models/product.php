@@ -2,6 +2,14 @@
 
 namespace Examples\models;
 
+
+/**
+ * @property object $test Description
+ * @property object $t alias of $test
+ * @property shop $s Shop
+ * @property float $price Price
+ * @property string $brand Brand
+ */
 class product extends \Manju\Bun{
     
     protected $savetimestamps = true;
