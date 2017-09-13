@@ -7,7 +7,6 @@ use RedBeanPHP\Facade as R;
 use Psr\Log\LoggerInterface;
 
 
-
 /**
  * Constants used
  */
@@ -22,6 +21,7 @@ use Psr\Log\LoggerInterface;
  * 
  * For use with IDE
  * @property int $id Bean ID
+ * 
  */
 abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable{
     
@@ -54,7 +54,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     //===============       Bun Properties        ===============//
     
-    const VERSION = '1.0.2';
+    const VERSION = '1.0.3';
     
     /**
      * Regex to check some values
@@ -156,7 +156,31 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     
     public function __call($method, $args) {
         $this->bean or $this->create();
-        if(!method_exists($this->bean, $method)){
+        //basic setters getters
+        if(preg_match('/^(?P<act>get|set)(?P<prop>[A-Z][a-zA-Z0-9]+)$/', $method, $matches)){
+            //use camel to snake converter
+            $prop = $this->bean->beau($matches['prop']);
+            //remove first underscore
+            $prop = substr($prop, 1);
+            $prop = $this->getAliasTarget($prop);
+            switch ($matches['act']){
+                case 'get':
+                    if(count($args)){
+                        $this->debug("trying to overload getter method " . get_class($this). "->$method() with an argument.");
+                        throw new \InvalidArgumentException("$method method don't accept arguments.", 0);
+                    }
+                    return $this->$prop;
+                    break;
+                case 'set':
+                    if(count($args) != 1){
+                        $this->debug("trying to overload setter method " . get_class($this) . "->$method() with an invalid argument count.");
+                        throw new \InvalidArgumentException("$method method require one argument.");
+                    }
+                    $this->$prop = $args[0];
+                    return $this;
+            }
+        }
+        elseif(!method_exists($this->bean, $method)){
             $this->debug(sprintf("Trying to access unknown method %s->%s().", get_class($this),$method));
             //let OODBBean handle the error
         }
@@ -288,18 +312,18 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     /**
      * Add a plugin accessible to all the models
      * @param type $instance Plugin Object
-     * @param string $friendly_name name for the plugin to be accessed $this->plugins()->friendly_name If not set will use lowercase class basename
+     * @param string $name name for the plugin to be accessed $this->plugins()->friendly_name If not set will use lowercase class basename
      * @return $this
      */
-    public function addPlugin($instance, string $friendly_name = null){
+    public function addPlugin($instance, string $name = null){
         if(!is_object($instance)){
             return $this;
         }
-        if(!$friendly_name){
-            $friendly_name = (new \ReflectionClass($instance))->getShortName();
-            $friendly_name = strtolower($friendly_name);
+        if(!$name){
+            $name = (new \ReflectionClass($instance))->getShortName();
+            $name = strtolower($name);
         }
-        $this->plugins()->$friendly_name = $instance;
+        $this->plugins()->$name = $instance;
         return $this;
     }
     
