@@ -61,7 +61,8 @@ $s->p = $p(1);
 $s->name = "Carrefour";
 $s->city = "London";
 $s->store();*/
-
+/*
 print_r($s(1)->getPlate('p')[1]->t);
 print($s);
-
+*/
+$s->getCityStreet();
