@@ -152,7 +152,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function delete() {}
     public function after_delete() {}
     
-    //=============== RedBeanPHP\OODBBean Method Access (Reverse FUSE) ===============//
+    //=============== RedBeanPHP\OODBBean Method Access (FUSE) ===============//
     
     public function __call($method, $args) {
         $this->bean or $this->create();
@@ -176,9 +176,9 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                         $this->debug("trying to overload setter method " . get_class($this) . "->$method() with an invalid argument count.");
                         throw new \InvalidArgumentException("$method method require one argument.");
                     }
-                    $this->$prop = $args[0];
-                    return $this;
+                    else $this->$prop = $args[0];
             }
+            return $this;
         }
         elseif(!method_exists($this->bean, $method)){
             $this->debug(sprintf("Trying to access unknown method %s->%s().", get_class($this),$method));
