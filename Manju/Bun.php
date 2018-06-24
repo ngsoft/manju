@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.0.5';
+    const VERSION = '1.1.0';
 
     /**
      * Regex to check some values
@@ -771,7 +771,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             }
             return $val;
         }
-        if (array_key_exists($prop, $this->properties)) {
+        if ($val == null and array_key_exists($prop, $this->properties)) {
             $val = $this->properties[$prop];
         } elseif ($this->getColumnType($prop)) {
             $val = $this->convertForGet($prop, $val);
