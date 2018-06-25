@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.1.0';
+    const VERSION = '1.1.1';
 
     /**
      * Regex to check some values
@@ -824,7 +824,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         }
 
         if ($ctype = $this->getColumnType($prop)) {
-            if ($ctype != gettype($val)) {
+            if ($ctype != gettype($val) and $ctype != 'datetime') {
                 $this->debug("Trying to set value with type " . gettype($val) . " configured as $ctype in " . get_class($this));
                 return;
             }
