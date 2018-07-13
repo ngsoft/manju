@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.1.1';
+    const VERSION = '1.2';
 
     /**
      * Regex to check some values
@@ -798,6 +798,9 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         $prop = $this->getAliasTarget($prop);
         if ($prop == 'id')
             return;
+        if (!in_array($prop, [MANJU_CREATED_COLUMN, MANJU_UPDATED_COLUMN])) {
+            $this->addTimestamps();
+        }
         $method = "set_$prop";
         if (method_exists($this, $method)) {
             $val = $this->$method($val);
