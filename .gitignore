@@ -1,3 +1,5 @@
 /nbproject/
 /composer.lock
 /trash/
+*.cmd
+*.sh
