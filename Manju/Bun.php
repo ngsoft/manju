@@ -798,6 +798,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         $prop = $this->getAliasTarget($prop);
         if ($prop == 'id')
             return;
+        //fix owned list not updating entries (NULL value)
         if (!in_array($prop, [MANJU_CREATED_COLUMN, MANJU_UPDATED_COLUMN])) {
             $this->addTimestamps();
         }
