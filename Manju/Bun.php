@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.2';
+    const VERSION = '1.3';
 
     /**
      * Regex to check some values
@@ -1012,10 +1012,11 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         foreach ($data as $id => &$bean) {
             if (!($bean instanceof OODBBean))
                 continue;
+            //inputing the $id as the key can create some unexpected results
             if ($bun = $bean->getMeta('model') and $bun instanceof Bun) {
-                $r[$id] = $bun;
+                $r[] = $bun;
             } else
-                $r[$id] = $bean;
+                $r[] = $bean;
         }
         return $r;
     }
