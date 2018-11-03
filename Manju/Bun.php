@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.3';
+    const VERSION = '1.3.1';
 
     /**
      * Regex to check some values
