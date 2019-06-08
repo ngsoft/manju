@@ -51,7 +51,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.3.1';
+    const VERSION = '1.4';
 
     /**
      * Regex to check some values
@@ -169,7 +169,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function __call($method, $args) {
         $this->bean or $this->create();
         //basic setters getters
-        if (preg_match('/^(?P<act>get|set)(?P<prop>[A-Z][a-zA-Z0-9]+)$/', $method, $matches)) {
+        if (\preg_match('/^(?P<act>get|set)(?P<prop>[A-Z][a-zA-Z0-9]+)$/', $method, $matches)) {
             //use camel to snake converter
             $prop = $this->bean->beau($matches['prop']);
             //remove first underscore
@@ -182,17 +182,15 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                         throw new \InvalidArgumentException("$method method don't accept arguments.", 0);
                     }
                     return $this->$prop;
-                    break;
+                //break;
                 case 'set':
                     if (count($args) != 1) {
                         $this->debug("trying to overload setter method " . get_class($this) . "->$method() with an invalid argument count.");
                         throw new \InvalidArgumentException("$method method require one argument.");
-                    } else
-                        $this->$prop = $args[0];
+                    } else $this->$prop = $args[0];
             }
             return $this;
-        }
-        elseif (!method_exists($this->bean, $method)) {
+        } elseif (!method_exists($this->bean, $method)) {
             $this->debug(sprintf("Trying to access unknown method %s->%s().", get_class($this), $method));
             //let OODBBean handle the error
         }
@@ -225,7 +223,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param array $bean Array to import into the bean
      * @param null|bool $bean Do nothing (prevent loops)
      */
-    final public function __construct($bean = null) {
+    public function __construct($bean = null) {
         $bean = is_null($bean) ? false : $bean;
         $this->initialize($bean);
     }
@@ -258,7 +256,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         }
 
         //set defaults values to bean using the filter
-        foreach (self::$defaults[get_class($this)] as $prop => $val) {
+        foreach (\array_keys(self::$defaults[\get_class($this)]) as $prop) {
             if (is_null($this->bean->$prop)) {
                 $this->$prop = null;
             }
@@ -285,8 +283,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             self::$beanlist or $this->setBeanlist();
             $this->_configure();
         }
-        if (is_bool($bean))
-            return;
+        if (is_bool($bean)) return;
 
         switch (gettype($bean)) {
             case "integer":
@@ -342,8 +339,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     protected function setColumnType(string $prop, string $type): bool {
         //type is alias?
-        if (isset(self::$types_alias[$type]))
-            $type = self::$types_alias[$type];
+        if (isset(self::$types_alias[$type])) $type = self::$types_alias[$type];
         //type exists?
         if (!in_array($type, self::$valid_types)) {
             $this->debug("Trying to set invalid type $type for column $prop in " . get_class($this));
@@ -365,12 +361,11 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     /**
      * Set default value for a column
      * @param string $prop Column name
-     * @param type $defaults default value (can be a callable)
+     * @param any $defaults default value (can be a callable)
      * @return bool
      */
     protected function setColumnDefaults(string $prop, $defaults): bool {
-        if (is_null($defaults))
-            return false;
+        if (is_null($defaults)) return false;
         self::$defaults[get_class($this)][$prop] = $defaults;
         return true;
     }
@@ -381,7 +376,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return mixed
      */
     protected function getColumnDefaults(string $prop) {
-        return array_key_exists($prop, self::$defaults[get_class($this)]) ? self::$defaults[get_class($this)][$prop] : null;
+        return (\array_key_exists($prop, self::$defaults[\get_class($this)]) ? self::$defaults[\get_class($this)][$prop] : null);
     }
 
     /**
@@ -393,8 +388,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     protected function addAlias(string $alias, string $target) {
         if ($alias == $target) {
             $this->debug("Trying to set alias $alias to $target in " . get_class($this));
-        } else
-            self::$alias[get_class($this)][$alias] = $target;
+        } else self::$alias[get_class($this)][$alias] = $target;
         return $this;
     }
 
@@ -421,10 +415,8 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return $this
      */
     protected function addCol(string $prop, string $type = null, $defaults = null) {
-        if (!is_null($type))
-            $this->setColumnType($prop, $type);
-        if (!is_null($defaults))
-            $this->setColumnDefaults($prop, $defaults);
+        if (!is_null($type)) $this->setColumnType($prop, $type);
+        if (!is_null($defaults)) $this->setColumnDefaults($prop, $defaults);
         if (is_null($type) and is_null($defaults)) {
             $this->debug("Trying to set a managed column with no type and no default value (one parameter must be set) in " . get_class($this));
         }
@@ -553,11 +545,9 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * before using store()
      */
     protected function updateTainted() {
-        if (!$this->tainted)
-            return;
+        if (!$this->tainted) return;
         foreach ($this->properties as $prop => $val) {
-            if (!$this->getColumnType($prop))
-                continue;
+            if (!$this->getColumnType($prop)) continue;
             if ($val instanceof \DateTime) {
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
@@ -575,8 +565,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return type
      */
     private function addTimestamps() {
-        if (!$this->savetimestamps)
-            return;
+        if (!$this->savetimestamps) return;
         $date = date(DateTime::DB);
         $created = MANJU_CREATED_COLUMN;
         $updated = MANJU_UPDATED_COLUMN;
@@ -625,17 +614,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param array $data
      */
     public function import(array $data) {
-        if (!count($data))
-            return;
+        if (!count($data)) return;
 
-        if (isset($data['$id']))
-            $this->load($data['id']);
-        else
-            $this->create();
+        if (isset($data['$id'])) $this->load($data['id']);
+        else $this->create();
 
         foreach ($data as $prop => $val) {
-            if (is_int($prop) or is_null($prop))
-                continue;
+            if (is_int($prop) or is_null($prop)) continue;
             //convert data
             $this->$prop = $val;
         }
@@ -653,16 +638,12 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
         foreach ($properties as $prop => $val) {
             //owned/shared lists are array, they won't be exported
-            if (is_array($val))
-                continue;
+            if (is_array($val)) continue;
             //to one are beans
-            if ($val instanceof OODBBean)
-                continue;
+            if ($val instanceof OODBBean) continue;
             //we use the converter like this
-            if ($convert)
-                $export[$prop] = $this->$prop;
-            else
-                $export[$prop] = $val;
+            if ($convert) $export[$prop] = $this->$prop;
+            else $export[$prop] = $val;
         }
         return $export;
     }
@@ -675,7 +656,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      *
      * @return $this
      */
-    final public function create() {
+    public function create() {
         $this->bean = null;
         BunHelper::dispense($this);
         return $this;
@@ -689,12 +670,10 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param int $id id field of the bean
      * @return $this
      */
-    final public function load(int $id = 0) {
+    public function load(int $id = 0) {
         $this->bean = null;
-        if ($id == 0)
-            $this->create();
-        else
-            BunHelper::load($this, $id);
+        if ($id == 0) $this->create();
+        else BunHelper::load($this, $id);
         return $this;
     }
 
@@ -705,9 +684,8 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      *
      * @return $this;
      */
-    final public function trash() {
-        if (!$this->bean)
-            return $this;
+    public function trash() {
+        if (!$this->bean) return $this;
         R::trash($this->bean);
         return $this->create();
     }
@@ -716,7 +694,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * Reloads data for the current bean from the database
      * @return $this
      */
-    final public function fresh() {
+    public function fresh() {
         return $this->load($this->id);
     }
 
@@ -728,24 +706,19 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @param bool $fresh Refresh the bean with saved data
      * @return $this
      */
-    final public function store(bool $fresh = false) {
+    public function store(bool $fresh = false) {
         if (!$this->bean or ! $this->cansave) {
-            if (!$this->cansave)
-                $this->debug("trying to store a bean with cansave flag set to false in " . get_class($this));
-            else
-                $this->debug("trying to store a non existing bean, store() process halted in " . get_class($this));
+            if (!$this->cansave) $this->debug("trying to store a bean with cansave flag set to false in " . get_class($this));
+            else $this->debug("trying to store a non existing bean, store() process halted in " . get_class($this));
             return $this;
         }
         $this->updateTainted();
         $this->addTimestamps();
         if ($this->checkRequired()) {
             R::store($this->bean);
-            if ($fresh)
-                return $this->fresh();
-            else
-                $this->initialize(false);
-        }
-        else {
+            if ($fresh) return $this->fresh();
+            else $this->initialize(false);
+        } else {
             $this->debug("Trying to store a bean with not all the required columns set in " . get_class($this) . "\\store(), process halted.");
         }
         return $this;
@@ -796,8 +769,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     public function __set($prop, $val) {
         $this->bean or $this->create();
         $prop = $this->getAliasTarget($prop);
-        if ($prop == 'id')
-            return;
+        if ($prop == 'id') return;
         //fix owned list not updating entries (NULL value)
         if (!in_array($prop, [MANJU_CREATED_COLUMN, MANJU_UPDATED_COLUMN])) {
             $this->addTimestamps();
@@ -816,8 +788,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                     return;
                 }
             }
-            if (!is_array($val))
-                return;
+            if (!is_array($val)) return;
             $this->bean->$prop = $val;
             return;
         }
@@ -846,8 +817,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     }
 
     public function __unset($prop) {
-        if (!$this->bean)
-            return;
+        if (!$this->bean) return;
         if (!is_null($this->bean->$prop)) {
             if (is_array($this->bean->$prop)) {
                 $this->bean->$prop = [];
@@ -1009,14 +979,12 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     public function createPlate(array $data): array {
         $r = [];
-        foreach ($data as $id => &$bean) {
-            if (!($bean instanceof OODBBean))
-                continue;
+        foreach ($data as &$bean) {
+            if (!($bean instanceof OODBBean)) continue;
             //inputing the $id as the key can create some unexpected results
             if ($bun = $bean->getMeta('model') and $bun instanceof Bun) {
                 $r[] = $bun;
-            } else
-                $r[] = $bean;
+            } else $r[] = $bean;
         }
         return $r;
     }
@@ -1027,8 +995,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      * @return string
      */
     public function beantype() {
-        if ($this->beantype)
-            return $this->beantype;
+        if ($this->beantype) return $this->beantype;
         if ($class = (new \ReflectionClass($this))->getShortName()) {
             $type = strtolower($class);
             $cut = explode('_', $type);
@@ -1063,8 +1030,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         //and initialize them
         $list = array_reverse(get_declared_classes());
         foreach ($list as $class) {
-            if ($class == get_class($this))
-                continue;
+            if ($class == get_class($this)) continue;
             if (in_array(__CLASS__, class_parents($class))) {
                 new $class;
             }
@@ -1132,8 +1098,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if (!self::$logger and class_exists("Manju\\Logger")) {
             $this->setLogger(new Logger);
         }
-        if (self::$logger)
-            self::$logger->$level($message, $context);
+        if (self::$logger) self::$logger->$level($message, $context);
     }
 
     //===============       Interfaces        ===============//
@@ -1172,8 +1137,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
         foreach ($data as $prop => $val) {
             if (is_object($val)) {
-                if ($val instanceof \JsonSerializable)
-                    $val = $val->jsonSerialize();
+                if ($val instanceof \JsonSerializable) $val = $val->jsonSerialize();
                 else {
                     //try to get most values
                     $val = json_decode(json_encode($val), true);
