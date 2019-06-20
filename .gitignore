@@ -1,5 +1,8 @@
+.*
+!.gitignore
+!composer.json
+*.lock
+*.bak
+/tests/
 /nbproject/
-/composer.lock
-/trash/
-*.cmd
-*.sh
+/vendor/
