@@ -1,20 +1,16 @@
 {
     "name": "ngsoft/manju",
-    "description": "Manju ORM Based on RedBeanPHP, improving the SimpleModel giving it the faculty to store php scalar types and objects into the database",
-    "keywords": [
-        "orm", "redbean"
-    ],
+    "description": "Manju ORM Based on RedBeanPHP, improving the SimpleModel",
+    "keywords": ["orm", "redbean"],
     "homepage": "https://github.com/ngsoft/manju",
     "license": "MIT",
-    "authors": [
-        {
+    "authors": [{
             "name": "Aymeric Anger",
             "email": "daedelus.git@gmail.com",
             "homepage": "https://github.com/ngsoft"
-        }
-    ],
+        }],
     "require-dev": {
-        "phan/phan": "^2.2"
+        "phan/phan": "*"
     },
     "require": {
         "php": ">=7.1",
