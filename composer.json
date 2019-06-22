@@ -14,8 +14,7 @@
     },
     "require": {
         "php": ">=7.1",
-        "gabordemooij/redbean": "5.*",
-        "kdyby/parse-use-statements": "*"
+        "gabordemooij/redbean": "5.*"
     },
     "autoload": {
         "psr-4": {
