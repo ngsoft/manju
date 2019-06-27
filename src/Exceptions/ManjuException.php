@@ -2,6 +2,8 @@
 
 namespace Manju\Exceptions;
 
-class ManjuException extends \Exception {
+use NGSOFT\Tools\Exceptions\Exception;
+
+class ManjuException extends Exception {
 
 }

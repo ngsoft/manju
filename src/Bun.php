@@ -2,7 +2,9 @@
 
 namespace Manju;
 
-abstract class Bun {
+use Manju\ORM\Model;
+
+abstract class Bun extends Model {
 
     const VERSION = "2.0.0";
 
