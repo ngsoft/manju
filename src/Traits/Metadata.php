@@ -12,7 +12,12 @@ trait Metadata {
     ];
 
     public function getMeta(string $key = null) {
+        if (!isset($this->metadata["type"])) {
+            //scan Metadata
+        }
 
+        if ($key === null) return $this->metadata;
+        return $this->metadata[$key] ?? null;
     }
 
 }

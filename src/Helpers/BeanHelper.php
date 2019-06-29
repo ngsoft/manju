@@ -15,7 +15,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     protected static $models = [];
 
     public static function addModel(Model $model) {
-        $models[$model::beanType()] = get_class($model);
+        if ($type = $model->getMeta("type")) self::$models[$type] = get_class($model);
     }
 
     public function getModelForBean(OODBBean $bean) {
@@ -36,6 +36,8 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         foreach ($models as $model) {
             self::addModel(new $model);
         }
+
+        print_r(self::$models);
     }
 
 }
