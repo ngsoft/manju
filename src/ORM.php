@@ -4,10 +4,11 @@ namespace Manju;
 
 use Manju\Exceptions\ManjuException;
 use Manju\Helpers\Bean;
+use Manju\Helpers\BeanHelper;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use RedBeanPHP\Facade;
 use RedBeanPHP\RedException;
-use function NGSOFT\Tools\autoloadDir;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
@@ -31,7 +32,8 @@ class ORM extends Facade {
                 "frozen" => false
             ]
         ],
-        LoggerInterface::class => null
+        LoggerInterface::class => null,
+        CacheItemPoolInterface::class => null
     ];
     protected static $started = false;
 
@@ -70,7 +72,7 @@ class ORM extends Facade {
             }
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
 
-            $helper = new Helpers\BeanHelper(self::$config["models"]);
+            $helper = new BeanHelper(self::$config["models"]);
             self::getRedBean()->setBeanHelper($helper);
 
 
@@ -79,12 +81,36 @@ class ORM extends Facade {
         }
     }
 
-    public static function getPsrlogger(): LoggerInterface {
-        return self::$psrlogger;
+    /**
+     * Get current declared logger
+     * @return LoggerInterface|null
+     */
+    public static function getPsrlogger(): ?LoggerInterface {
+        return self::$config[LoggerInterface::class];
     }
 
+    /**
+     * Set the logger
+     * @param LoggerInterface $psrlogger
+     */
     public static function setPsrlogger(LoggerInterface $psrlogger) {
-        self::$psrlogger = $psrlogger;
+        self::$config[LoggerInterface::class] = $psrlogger;
+    }
+
+    /**
+     * get current cache pool
+     * @return CacheItemPoolInterface|null
+     */
+    public static function getCachePool(): ?CacheItemPoolInterface {
+        return self::$config[CacheItemPoolInterface::class];
+    }
+
+    /**
+     * Set the cache pool
+     * @param CacheItemPoolInterface $pool
+     */
+    public static function setCachePool(CacheItemPoolInterface $pool) {
+        self::$config[CacheItemPoolInterface::class] = $pool;
     }
 
 }
