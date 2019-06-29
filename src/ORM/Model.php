@@ -49,9 +49,6 @@ abstract class Model extends SimpleModel implements LoggerAwareInterface, Contai
 
     ////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
 
-    /** @var string|null */
-    public static $type;
-
     /**
      * @var int
      */
