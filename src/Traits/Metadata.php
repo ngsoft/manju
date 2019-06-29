@@ -2,6 +2,8 @@
 
 namespace Manju\Traits;
 
+use Manju\Converters\Number;
+use Manju\Converters\Text;
 use Manju\Exceptions\ManjuException;
 use Manju\ORM;
 use Manju\ORM\Model;
@@ -17,7 +19,9 @@ trait Metadata {
     protected $metadata = [
         "type" => null,
         "properties" => ["id"],
-        "converters" => [],
+        "converters" => [
+            "id" => Number::class
+        ],
         "uniques" => []
     ];
     protected $converters = [];
@@ -35,6 +39,7 @@ trait Metadata {
     }
 
     private function buildMetas() {
+
         if (!($this instanceof Model)) {
             throw new ManjuException("Can only use trait " . __CLASS__ . "with class extending " . Model::class);
         }
@@ -75,6 +80,7 @@ trait Metadata {
                     and ! $prop->isPrivate() and ! $prop->isStatic()
             ) {
                 $this->metadata["properties"][] = $prop->name;
+                $this->metadata["converters"][$prop->name] = Text::class;
             }
         }
 
