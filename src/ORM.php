@@ -30,23 +30,26 @@ class ORM extends Facade {
                 "password" => null,
                 "frozen" => false
             ]
-        ]
+        ],
+        LoggerInterface::class => null
     ];
     protected static $started = false;
 
     public static function configure(array $config) {
         foreach (self::$config as $k => $v) {
             if (array_key_exists($k, $config) and gettype($v) === gettype(self::$config[$k])) {
-                self::$config[$k] = $v;
+                self::$config[$k] = $config[$k];
             }
         }
     }
 
-    public static function start() {
+    public static function start(array $config = []) {
         if (!self::$started) {
+            if (count($config)) self::configure($config);
+            print_r(self::$config);
             if (empty(static::$config["models"])) throw new ManjuException("No model path set.");
             if (!isset(self::$toolboxes["default"])) {
-                foreach (self::$config[db] as $connection => $params) {
+                foreach (self::$config["db"] as $connection => $params) {
                     if ($connection === "default") {
                         self::setup($params["dsn"] ?? null, $params["username"] ?? null, $params["password"] ?? null, $params["frozen"] ?? false);
                     } else {
@@ -60,6 +63,9 @@ class ORM extends Facade {
             foreach (self::$config["models"] as $path) {
                 autoloadDir($path);
             }
+
+
+            self::$started = true;
         }
     }
 
