@@ -6,7 +6,10 @@ use Manju\ORM\Model;
 
 trait Metadata {
 
-    private $metadata = [];
+    /** @var array */
+    private $metadata = [
+        "type" => null
+    ];
 
     public function getMeta(string $key = null) {
 

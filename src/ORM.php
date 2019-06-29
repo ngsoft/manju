@@ -35,6 +35,10 @@ class ORM extends Facade {
     ];
     protected static $started = false;
 
+    /**
+     * Configure Manju ORM
+     * @param array $config<string,mixed>
+     */
     public static function configure(array $config) {
         foreach (self::$config as $k => $v) {
             if (array_key_exists($k, $config) and gettype($v) === gettype(self::$config[$k])) {
@@ -43,6 +47,12 @@ class ORM extends Facade {
         }
     }
 
+    /**
+     * Starts Manju ORM
+     * @param array<string,mixed> $config
+     * @throws ManjuException
+     * @throws RedException
+     */
     public static function start(array $config = []) {
         if (!self::$started) {
             if (count($config)) self::configure($config);
@@ -60,9 +70,9 @@ class ORM extends Facade {
             }
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
 
-            foreach (self::$config["models"] as $path) {
-                autoloadDir($path);
-            }
+            $helper = new Helpers\BeanHelper(self::$config["models"]);
+            self::getRedBean()->setBeanHelper($helper);
+
 
 
             self::$started = true;

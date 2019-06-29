@@ -2,9 +2,12 @@
 
 namespace Manju\Helpers;
 
+use Manju\Exceptions\ManjuException;
 use Manju\ORM\Model;
 use RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper;
 use RedBeanPHP\OODBBean;
+use function NGSOFT\Tools\autoloadDir;
+use function NGSOFT\Tools\findClassesImplementing;
 
 class BeanHelper extends SimpleFacadeBeanHelper {
 
@@ -22,6 +25,17 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
 
         return parent::getModelForBean($bean);
+    }
+
+    public function __construct(array $models) {
+        foreach ($models as $path) {
+            autoloadDir($path);
+        }
+        $models = findClassesImplementing(Model::class);
+        if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
+        foreach ($models as $model) {
+            self::addModel(new $model);
+        }
     }
 
 }
