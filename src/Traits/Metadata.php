@@ -15,8 +15,4 @@ trait Metadata {
 
     }
 
-    private static function ParseMeta(Model $model) {
-
-    }
-
 }
