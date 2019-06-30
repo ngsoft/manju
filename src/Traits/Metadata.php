@@ -2,6 +2,7 @@
 
 namespace Manju\Traits;
 
+use Manju\Converters\Date;
 use Manju\Converters\Number;
 use Manju\Converters\Text;
 use Manju\Exceptions\ManjuException;
@@ -12,19 +13,30 @@ use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\SimpleModel;
 use ReflectionClass;
 use SplFileInfo;
+use const day;
 use function NGSOFT\Tools\findClassesImplementing;
 use function NGSOFT\Tools\toSnake;
 
 trait Metadata {
 
-    /** @var array */
+    /** @var array<string,mixed> Table Schema */
     protected $metadata = [
+        //table name
         "type" => null,
-        "properties" => ["id"],
+        //property list
+        "properties" => ["id", "created_at", "updated_at"],
+        //properties data types
         "converters" => [
-            "id" => Number::class
+            "id" => Number::class,
+            "created_at" => Date::class,
+            "updated_at" => Date::class,
         ],
-        "uniques" => []
+        // unique values
+        "uniques" => [],
+        //not null values
+        "required" => [],
+        //enables created and updated
+        "timestamps" => false
     ];
 
     /** @var array<string,Converter> */
@@ -48,20 +60,8 @@ trait Metadata {
             throw new ManjuException("Can only use trait " . __CLASS__ . "with class extending " . Model::class);
         }
 
-        $refl = new ReflectionClass($this);
-        if ($pool = ORM::getCachePool()) {
-            $fileinfo = new SplFileInfo($refl->getFileName());
-            $cachekey = md5($fileinfo->getMTime() . $fileinfo->getPathname());
-
-            $item = $pool->getItem($cachekey);
-            if ($item->isHit()) {
-                $this->metadata = $item->get();
-                return;
-            }
-        }
-
+        //loads converters
         $converters = &self::$converters;
-
         if (empty($converters)) {
             foreach (findClassesImplementing(Converter::class) as $class) {
                 $conv = new $class();
@@ -72,6 +72,19 @@ trait Metadata {
             }
         }
 
+        //Reads from cache
+        $refl = new ReflectionClass($this);
+        if ($pool = ORM::getCachePool()) {
+            $fileinfo = new SplFileInfo($refl->getFileName());
+            //use filemtime to parse new metadatas when model is modified
+            $cachekey = md5($fileinfo->getMTime() . $fileinfo->getPathname());
+
+            $item = $pool->getItem($cachekey);
+            if ($item->isHit()) {
+                $this->metadata = $item->get();
+                return;
+            }
+        }
 
 
 
@@ -88,7 +101,6 @@ trait Metadata {
             $type = array_pop($parts);
             if (preg_match(Model::VALID_BEAN, $type)) $this->metadata["type"] = $type;
         }
-
 
 
         //reads properties from model class
@@ -115,6 +127,7 @@ trait Metadata {
 
         if ($pool instanceof CacheItemPoolInterface) {
             $item->set($this->metadata);
+            $item->expiresAfter(1 * day);
             $pool->save($item);
         }
     }
