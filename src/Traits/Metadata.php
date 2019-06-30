@@ -31,6 +31,8 @@ trait Metadata {
             "created_at" => Date::class,
             "updated_at" => Date::class,
         ],
+        //defaults values (if property set ith a value)
+        "defaults" => [],
         // unique values
         "uniques" => [],
         //not null values
@@ -113,6 +115,7 @@ trait Metadata {
             ) {
                 $this->metadata["properties"][] = $prop->name;
                 $this->metadata["converters"][$prop->name] = Text::class;
+                if ($this->{$prop->name} !== null) $this->metadata["defaults"][$prop->name] = $this->{$prop->name};
             }
         }
 
