@@ -65,12 +65,11 @@ trait Metadata {
         if (empty($converters)) {
             foreach (findClassesImplementing(Converter::class) as $class) {
                 $conv = new $class();
-                $converters[$class] = $class;
+                $converters[$class] = $conv;
                 foreach ($conv->getTypes() as $keyword) {
-                    $converters[$keyword] = $class;
+                    $converters[$keyword] = $conv;
                 }
             }
-            print_r($converters);
         }
 
 
