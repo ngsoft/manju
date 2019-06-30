@@ -73,6 +73,7 @@ class ORM extends Facade {
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
 
             $helper = new BeanHelper(self::$config["models"]);
+            if (isset(self::$config[LoggerInterface::class])) $helper->setLogger(self::$config[LoggerInterface::class]);
             self::getRedBean()->setBeanHelper($helper);
 
 
