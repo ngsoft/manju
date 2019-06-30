@@ -39,7 +39,7 @@ class ORM extends Facade {
 
     /**
      * Configure Manju ORM
-     * @param array $config<string,mixed>
+     * @param array<string,mixed> $config
      */
     public static function configure(array $config) {
         foreach (self::$config as $k => $v) {
@@ -73,7 +73,6 @@ class ORM extends Facade {
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
 
             $helper = new BeanHelper(self::$config["models"]);
-            if (isset(self::$config[LoggerInterface::class])) $helper->setLogger(self::$config[LoggerInterface::class]);
             self::getRedBean()->setBeanHelper($helper);
 
 

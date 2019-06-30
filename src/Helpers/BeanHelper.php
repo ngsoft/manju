@@ -64,6 +64,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     public function __construct(array $models) {
+        if ($logger = ORM::getPsrlogger()) $this->setLogger($logger);
         foreach ($models as $path) {
             autoloadDir($path);
         }
