@@ -3,6 +3,7 @@
 namespace Manju\Helpers;
 
 use Manju\Exceptions\ManjuException;
+use Manju\Interfaces\Converter;
 use Manju\ORM;
 use Manju\ORM\Model;
 use NGSOFT\Tools\Traits\Logger;
@@ -65,13 +66,14 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
     public function __construct(array $models) {
         if ($logger = ORM::getPsrlogger()) $this->setLogger($logger);
+
         foreach ($models as $path) {
             autoloadDir($path);
         }
         $models = findClassesImplementing(Model::class);
         if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
         foreach ($models as $model) {
-            self::addModel(new $model);
+            self::addModel(new $model());
         }
     }
 

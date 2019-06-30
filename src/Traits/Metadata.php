@@ -5,12 +5,14 @@ namespace Manju\Traits;
 use Manju\Converters\Number;
 use Manju\Converters\Text;
 use Manju\Exceptions\ManjuException;
+use Manju\Interfaces\Converter;
 use Manju\ORM;
 use Manju\ORM\Model;
 use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\SimpleModel;
 use ReflectionClass;
 use SplFileInfo;
+use function NGSOFT\Tools\findClassesImplementing;
 use function NGSOFT\Tools\toSnake;
 
 trait Metadata {
@@ -24,7 +26,9 @@ trait Metadata {
         ],
         "uniques" => []
     ];
-    protected $converters = [];
+
+    /** @var array<string,Converter> */
+    protected static $converters = [];
 
     /**
      * Get Model Metadatas
@@ -55,6 +59,23 @@ trait Metadata {
                 return;
             }
         }
+
+        $converters = &self::$converters;
+
+        if (empty($converters)) {
+            foreach (findClassesImplementing(Converter::class) as $class) {
+                $conv = new $class();
+                $converters[$class] = $class;
+                foreach ($conv->getTypes() as $keyword) {
+                    $converters[$keyword] = $class;
+                }
+            }
+            print_r($converters);
+        }
+
+
+
+
         //set type (without annotations)
         if (
                 isset(static::$type)

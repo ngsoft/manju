@@ -9,6 +9,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use RedBeanPHP\Facade;
 use RedBeanPHP\RedException;
+use function NGSOFT\Tools\autoloadDir;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
@@ -71,6 +72,10 @@ class ORM extends Facade {
                 if (self::$config["connection"] !== "default") self::selectDatabase(self::$config["connection"]);
             }
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
+            date_default_timezone_set(self::$config["timezone"]);
+
+            //preload converters
+            autoloadDir(__DIR__ . '/Converters');
 
             $helper = new BeanHelper(self::$config["models"]);
             self::getRedBean()->setBeanHelper($helper);
