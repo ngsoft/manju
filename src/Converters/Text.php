@@ -18,7 +18,7 @@ class Text implements Converter {
 
     /** {@inheritdoc} */
     public function getTypes(): array {
-        return ["string", "text", "String", "Text"];
+        return ["string", "text"];
     }
 
     /** {@inheritdoc} */

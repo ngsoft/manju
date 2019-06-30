@@ -26,7 +26,7 @@ class Date implements Converter {
 
     /** {@inheritdoc} */
     public function getTypes(): array {
-        return ["date", "Date", "DateTime", "datetime"];
+        return ["date", "DateTime", "datetime"];
     }
 
     /** {@inheritdoc} */
