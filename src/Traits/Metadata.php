@@ -29,7 +29,7 @@ trait Metadata {
         //properties data types
         "converters" => [
         ],
-        //defaults values (if property set ith a value)
+        //defaults values (if property has a set value)
         "defaults" => [],
         // unique values
         "uniques" => [],
@@ -121,11 +121,12 @@ trait Metadata {
         $parser = new Parser(ORM::getPsrlogger());
         if ($annotations = $parser->ParseAll($refl)) {
             foreach ($annotations as $annotation) {
-                if ($annotation->annotationType === "PROPERTY" && $annotation->tag === "var" && in_array($annotation->attributeName, $this->metadata["properties"])) {
-                    if (is_string($annotation->value) && isset($converters[$annotation->value])) {
-                        $this->metadata["converters"][$annotation->attributeName] = get_class($converters[$annotation->value]);
-                    } else {
-                        print_r($annotation);
+                if ($annotation->annotationType === "PROPERTY" && ($annotation->tag === "var" || $annotation->tag === "converter") && in_array($annotation->attributeName, $this->metadata["properties"])) {
+                    if (is_string($annotation->value)) {
+                        $value = preg_replace('/^([a-zA-Z]+).*?$/', "$1", $annotation->value);
+                        if (isset($converters[$value])) {
+                            $this->metadata["converters"][$annotation->attributeName] = get_class($converters[$value]);
+                        } else print_r($annotation);
                     }
                 }
             }
