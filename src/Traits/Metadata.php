@@ -133,7 +133,7 @@ trait Metadata {
 
 
             //filters here
-            //print_r($annotations);
+            print_r($annotations);
         }
 
 
