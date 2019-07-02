@@ -6,6 +6,9 @@ use Manju\Helpers\AnnotationFilterAbstract;
 use Manju\ORM\Model;
 use NGSOFT\Tools\Reflection\Annotation;
 
+/**
+ * Change Model::__set() and Model::__get() behaviours
+ */
 class Access extends AnnotationFilterAbstract {
 
     /** {@inheritdoc} */

@@ -136,9 +136,14 @@ trait Metadata {
         //Reads annotations
         $parser = new Parser(ORM::getPsrlogger());
         if ($annotations = $parser->ParseAll($refl)) {
+            //parse only extended Models, not base models annotations
             $annotations = array_filter($annotations, function ($ann) {
                 return !in_array($ann->reflector->class ?? "", [Model::class, SimpleModel::class, Bun::class]);
             });
+            /**
+             * @var string
+             * @converter string
+             */
             foreach ($annotations as $annotation) {
                 if ($annotation->annotationType === "PROPERTY" && ($annotation->tag === "var" || $annotation->tag === "converter") && in_array($annotation->attributeName, $this->metadata["properties"])) {
                     if (is_string($annotation->value)) {
