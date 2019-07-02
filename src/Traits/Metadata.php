@@ -174,6 +174,9 @@ trait Metadata {
         foreach ($this->metadata["properties"] as $prop) {
             if (!array_key_exists($prop, $this->metadata["access"])) $this->metadata["access"][$prop] = Model::AUTO_PROPERTY_NONE;
         }
+        foreach (array_keys($this->metadata["relations"]) as $prop) {
+            if (!array_key_exists($prop, $this->metadata["access"])) $this->metadata["access"][$prop] = Model::AUTO_PROPERTY_NONE;
+        }
 
         print_r($this->metadata);
 

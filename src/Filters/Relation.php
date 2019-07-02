@@ -39,6 +39,7 @@ class Relation extends AnnotationFilterAbstract {
                 if (($index = array_search($prop, $meta["properties"])) !== false) {
                     unset($meta["properties"][$index]);
                     unset($meta["converters"][$prop]);
+                    ksort($meta["properties"]);
                 }
                 $meta["relations"][$prop] = $relation;
             }
