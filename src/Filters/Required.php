@@ -14,6 +14,7 @@ class Required extends AnnotationFilterAbstract {
     /** {@inheritdoc} */
     public $tags = ["required"];
 
+    /** {@inheritdoc} */
     public function handle(Annotation $annotation, array &$meta) {
 
         if ($annotation->annotationType === "CLASS") $props = (array) $annotation->value;

@@ -13,8 +13,14 @@ abstract class AnnotationFilterAbstract implements AnnotationFilter {
     /** @var array<string> */
     public $tags = [];
 
+    /**
+     * Handles a single annotation
+     * @param Annotation $annotation
+     * @param array $meta
+     */
     abstract public function handle(Annotation $annotation, array &$meta);
 
+    /** {@inheritdoc} */
     public function process(array $data, array &$meta) {
         foreach ($data as $annotation) {
             if (
