@@ -34,7 +34,7 @@ trait Metadata {
         //defaults values (if property has a set value)
         "defaults" => [],
         // unique values
-        "uniques" => [],
+        "unique" => [],
         //not null values
         "required" => [],
         //enables created_at and updated_at
