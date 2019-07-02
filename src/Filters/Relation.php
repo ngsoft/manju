@@ -18,7 +18,7 @@ class Relation extends AnnotationFilterAbstract {
     public function handle(Annotation $annotation, array &$meta) {
         /**
          * valid
-         * @relation RelationType(target= "target")
+         * @relation RelationType(target= "target", param1="value1")
          * @relation RelationType(target)
          */
         $val = $annotation->value;
