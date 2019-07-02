@@ -102,9 +102,7 @@ trait Metadata {
             }
         }
 
-
-
-        //set type (without annotations)
+        //set type(table) (without annotations)
         if (
                 isset(static::$type)
                 and preg_match(Model::VALID_BEAN, static::$type)
@@ -164,10 +162,10 @@ trait Metadata {
 
 
 
-        //id
+        //add id
         $this->metadata["properties"][] = "id";
         $this->metadata["converters"]["id"] = Number::class;
-        //timestamps
+        //add timestamps
         if ($this->metadata["timestamps"] === true) {
             $this->metadata["properties"] = array_merge($this->metadata["properties"], ["created_at", "updated_at"]);
             $this->metadata["converters"] = array_merge($this->metadata["converters"], [
@@ -175,7 +173,7 @@ trait Metadata {
                 "updated_at" => Date::class
             ]);
         }
-        //access
+        //set access rights
         foreach ($this->metadata["properties"] as $prop) {
             if (!array_key_exists($prop, $this->metadata["access"])) $this->metadata["access"][$prop] = Model::AUTO_PROPERTY_NONE;
         }
@@ -185,7 +183,7 @@ trait Metadata {
 
         print_r($this->metadata);
 
-
+        //save cache (if any)
         if ($pool instanceof CacheItemPoolInterface) {
             $item->set($this->metadata);
             $item->expiresAfter(1 * day);
