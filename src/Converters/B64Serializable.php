@@ -8,20 +8,24 @@ use Serializable;
 
 class B64Serializable implements Converter {
 
+    /** {@inheritdoc} */
     public function convertFromBean($value) {
         if (is_string($value) and mb_strlen($value) > 0) return $this->b64unserialize($value);
-        return [];
+        return null;
     }
 
+    /** {@inheritdoc} */
     public function convertToBean($value) {
         if (is_array($value) or $value instanceof Serializable) return $this->b64serialize($value);
         return "";
     }
 
+    /** {@inheritdoc} */
     public function getTypes(): array {
         return ["object", "array"];
     }
 
+    /** {@inheritdoc} */
     public function isValid($value) {
         return is_array($value) or $value instanceof Serializable;
     }
