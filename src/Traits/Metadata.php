@@ -38,6 +38,8 @@ trait Metadata {
         "required" => [],
         //access right
         "access" => [],
+        //relations
+        "relations" => [],
         //enables created_at and updated_at
         "timestamps" => false
     ];

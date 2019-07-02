@@ -6,7 +6,7 @@ use Manju\Helpers\AnnotationFilterAbstract;
 use Manju\ORM\Model;
 use NGSOFT\Tools\Reflection\Annotation;
 
-class Auto extends AnnotationFilterAbstract {
+class Access extends AnnotationFilterAbstract {
 
     /** {@inheritdoc} */
     public $types = ["CLASS"];

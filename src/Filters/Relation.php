@@ -16,7 +16,33 @@ class Relation extends AnnotationFilterAbstract {
 
     /** {@inheritdoc} */
     public function handle(Annotation $annotation, array &$meta) {
-        print_r($annotation);
+        /**
+         * valid
+         * @relation RelationType(target= "target")
+         * @relation RelationType(target)
+         */
+        $val = $annotation->value;
+        if (
+                is_array($val) and count($val) === 1
+                and $type = key($val) and is_string($type)
+                and is_array($val[$type])
+        ) {
+            $relation = [];
+            $relation["type"] = $type;
+            foreach ($val[$type] as $param => $value) {
+                if (is_int($param) and is_string($value)) {
+                    $relation["target"] = $value;
+                } elseif (is_string($param)) $relation[$param] = $value;
+            }
+            if (isset($relation["target"])) {
+                $prop = $annotation->attributeName;
+                if (($index = array_search($prop, $meta["properties"])) !== false) {
+                    unset($meta["properties"][$index]);
+                    unset($meta["converters"][$prop]);
+                }
+                $meta["relations"][$prop] = $relation;
+            }
+        }
     }
 
 }
