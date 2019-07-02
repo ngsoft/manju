@@ -75,6 +75,8 @@ class ORM extends Facade {
 
             //preload converters
             autoloadDir(__DIR__ . '/Converters');
+            //preload Filters
+            autoloadDir(__DIR__ . "/Filters");
 
             $helper = new BeanHelper(self::$config["models"]);
             self::getRedBean()->setBeanHelper($helper);

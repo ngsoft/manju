@@ -2,10 +2,12 @@
 
 namespace Manju\Traits;
 
+use Manju\Bun;
 use Manju\Converters\Date;
 use Manju\Converters\Number;
 use Manju\Converters\Text;
 use Manju\Exceptions\ManjuException;
+use Manju\Interfaces\AnnotationFilter;
 use Manju\Interfaces\Converter;
 use Manju\ORM;
 use Manju\ORM\Model;
@@ -42,6 +44,9 @@ trait Metadata {
     /** @var array<string,Converter> */
     protected static $converters = [];
 
+    /** @var array<AnnotationFilter> */
+    protected static $filters = [];
+
     /**
      * Get Model Metadatas
      * @param string|null $key
@@ -69,6 +74,14 @@ trait Metadata {
                 foreach ($conv->getTypes() as $keyword) {
                     $converters[$keyword] = $conv;
                 }
+            }
+        }
+
+        //loads filters
+        $filters = &self::$filters;
+        if (empty($filters)) {
+            foreach (findClassesImplementing(AnnotationFilter::class) as $class) {
+                $filters[] = new $class();
             }
         }
 
@@ -120,6 +133,9 @@ trait Metadata {
         //Reads annotations
         $parser = new Parser(ORM::getPsrlogger());
         if ($annotations = $parser->ParseAll($refl)) {
+            $annotations = array_filter($annotations, function ($ann) {
+                return !in_array($ann->reflector->class ?? "", [Model::class, SimpleModel::class, Bun::class]);
+            });
             foreach ($annotations as $annotation) {
                 if ($annotation->annotationType === "PROPERTY" && ($annotation->tag === "var" || $annotation->tag === "converter") && in_array($annotation->attributeName, $this->metadata["properties"])) {
                     if (is_string($annotation->value)) {
@@ -130,10 +146,9 @@ trait Metadata {
                     }
                 }
             }
-
-
-            //filters here
-            print_r($annotations);
+            foreach ($filters as $filter) {
+                $filter->process($annotations, $this->metadata);
+            }
         }
 
 
