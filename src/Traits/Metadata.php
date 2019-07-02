@@ -9,6 +9,7 @@ use Manju\Exceptions\ManjuException;
 use Manju\Interfaces\Converter;
 use Manju\ORM;
 use Manju\ORM\Model;
+use NGSOFT\Tools\Reflection\Parser;
 use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\SimpleModel;
 use ReflectionClass;
@@ -24,12 +25,9 @@ trait Metadata {
         //table name
         "type" => null,
         //property list
-        "properties" => ["id", "created_at", "updated_at"],
+        "properties" => [],
         //properties data types
         "converters" => [
-            "id" => Number::class,
-            "created_at" => Date::class,
-            "updated_at" => Date::class,
         ],
         //defaults values (if property set ith a value)
         "defaults" => [],
@@ -37,7 +35,7 @@ trait Metadata {
         "uniques" => [],
         //not null values
         "required" => [],
-        //enables created and updated
+        //enables created_at and updated_at
         "timestamps" => false
     ];
 
@@ -119,11 +117,40 @@ trait Metadata {
             }
         }
 
+        //Reads annotations
+        $parser = new Parser(ORM::getPsrlogger());
+        if ($annotations = $parser->ParseAll($refl)) {
+            foreach ($annotations as $annotation) {
+                if ($annotation->annotationType === "PROPERTY" && $annotation->tag === "var" && in_array($annotation->attributeName, $this->metadata["properties"])) {
+                    if (is_string($annotation->value) && isset($converters[$annotation->value])) {
+                        $this->metadata["converters"][$annotation->attributeName] = get_class($converters[$annotation->value]);
+                    } else {
+                        print_r($annotation);
+                    }
+                }
+            }
+
+
+            //filters here
+            //print_r($annotations);
+        }
 
 
 
 
 
+
+        //id
+        $this->metadata["properties"][] = "id";
+        $this->metadata["converters"]["id"] = Number::class;
+        //timestamps
+        if ($this->metadata["timestamps"] === true) {
+            $this->metadata["properties"] = array_merge($this->metadata["properties"], ["created_at", "updated_at"]);
+            $this->metadata["converters"] = array_merge($this->metadata["converters"], [
+                "created_at" => Date::class,
+                "updated_at" => Date::class
+            ]);
+        }
 
         print_r($this->metadata);
 

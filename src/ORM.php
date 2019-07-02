@@ -59,7 +59,6 @@ class ORM extends Facade {
     public static function start(array $config = []) {
         if (!self::$started) {
             if (count($config)) self::configure($config);
-            print_r(self::$config);
             if (empty(static::$config["models"])) throw new ManjuException("No model path set.");
             if (!isset(self::$toolboxes["default"])) {
                 foreach (self::$config["db"] as $connection => $params) {
