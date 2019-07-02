@@ -29,14 +29,15 @@ trait Metadata {
         //property list
         "properties" => [],
         //properties data types
-        "converters" => [
-        ],
+        "converters" => [],
         //defaults values (if property has a set value)
         "defaults" => [],
         // unique values
         "unique" => [],
         //not null values
         "required" => [],
+        //access right
+        "access" => [],
         //enables created_at and updated_at
         "timestamps" => false
     ];
@@ -166,6 +167,10 @@ trait Metadata {
                 "created_at" => Date::class,
                 "updated_at" => Date::class
             ]);
+        }
+        //access
+        foreach ($this->metadata["properties"] as $prop) {
+            if (!array_key_exists($prop, $this->metadata["access"])) $this->metadata["access"][$prop] = Model::AUTO_PROPERTY_NONE;
         }
 
         print_r($this->metadata);
