@@ -20,7 +20,11 @@ class Access extends AnnotationFilterAbstract {
     /** {@inheritdoc} */
     public function handle(Annotation $annotation, array &$meta) {
 
-        if (is_array($annotation->value) and isset($annotation->value["param"]) and in_array($annotation->value["param"], $meta["properties"])) {
+        if (
+                is_array($annotation->value)
+                and isset($annotation->value["param"])
+                and in_array($annotation->value["param"], $meta["properties"])
+        ) {
             switch ($annotation->tag) {
                 case "property-read":
                     $meta["access"][$annotation->value["param"]] = Model::AUTO_PROPERTY_READ;

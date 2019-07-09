@@ -22,6 +22,15 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var array<string,string> */
     protected static $models = [];
 
+    /** @var array<string,array> */
+    public static $metadatas = [];
+
+    /** @var array<string,Converter> */
+    public static $converters = [];
+
+    /** @var array<AnnotationFilter> */
+    public static $filters = [];
+
     /** @var Model|null */
     protected $for;
 

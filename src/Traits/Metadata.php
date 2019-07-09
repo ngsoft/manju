@@ -2,23 +2,19 @@
 
 namespace Manju\Traits;
 
-use Manju\Bun;
-use Manju\Converters\Date;
-use Manju\Converters\Number;
-use Manju\Converters\Text;
-use Manju\Exceptions\ManjuException;
-use Manju\Interfaces\AnnotationFilter;
-use Manju\Interfaces\Converter;
-use Manju\ORM;
-use Manju\ORM\Model;
-use NGSOFT\Tools\Reflection\Parser;
-use Psr\Cache\CacheItemPoolInterface;
-use RedBeanPHP\SimpleModel;
-use ReflectionClass;
-use SplFileInfo;
+use Manju\{
+    Bun, Converters\Date, Converters\Number, Converters\Text, Exceptions\ManjuException, Helpers\BeanHelper,
+    Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model
+};
+use NGSOFT\Tools\Reflection\Parser,
+    Psr\Cache\CacheItemPoolInterface,
+    RedBeanPHP\SimpleModel,
+    ReflectionClass,
+    SplFileInfo;
 use const day;
-use function NGSOFT\Tools\findClassesImplementing;
-use function NGSOFT\Tools\toSnake;
+use function NGSOFT\Tools\{
+    findClassesImplementing, toSnake
+};
 
 trait Metadata {
 
@@ -44,12 +40,6 @@ trait Metadata {
         "timestamps" => false
     ];
 
-    /** @var array<string,Converter> */
-    protected static $converters = [];
-
-    /** @var array<AnnotationFilter> */
-    protected static $filters = [];
-
     /**
      * Get Model Metadatas
      * @param string|null $key
@@ -69,7 +59,7 @@ trait Metadata {
         }
 
         //loads converters
-        $converters = &self::$converters;
+        $converters = &BeanHelper::$converters;
         if (empty($converters)) {
             foreach (findClassesImplementing(Converter::class) as $class) {
                 $conv = new $class();
@@ -81,12 +71,18 @@ trait Metadata {
         }
 
         //loads filters
-        $filters = &self::$filters;
+        $filters = &BeanHelper::$filters;
         if (empty($filters)) {
             foreach (findClassesImplementing(AnnotationFilter::class) as $class) {
                 $filters[] = new $class();
             }
         }
+
+        if (isset(BeanHelper::$metadatas[get_class($this)])) {
+            $this->metadata = BeanHelper::$metadatas[get_class($this)];
+            return;
+        }
+
 
         //Reads from cache
         $refl = new ReflectionClass($this);
@@ -98,6 +94,7 @@ trait Metadata {
             $item = $pool->getItem($cachekey);
             if ($item->isHit()) {
                 $this->metadata = $item->get();
+                BeanHelper::$metadatas[get_class($this)] = $item->get();
                 return;
             }
         }
@@ -143,7 +140,11 @@ trait Metadata {
              * @converter string
              */
             foreach ($annotations as $annotation) {
-                if ($annotation->annotationType === "PROPERTY" && ($annotation->tag === "var" || $annotation->tag === "converter") && in_array($annotation->attributeName, $this->metadata["properties"])) {
+                if (
+                        $annotation->annotationType === "PROPERTY"
+                        and ( $annotation->tag === "var" or $annotation->tag === "converter")
+                        and in_array($annotation->attributeName, $this->metadata["properties"])
+                ) {
                     if (is_string($annotation->value)) {
                         $value = preg_replace('/^([a-zA-Z]+).*?$/', "$1", $annotation->value);
                         if (isset($converters[$value])) {
@@ -156,10 +157,6 @@ trait Metadata {
                 $filter->process($annotations, $this->metadata);
             }
         }
-
-
-
-
 
 
         //add id
@@ -181,7 +178,7 @@ trait Metadata {
             if (!array_key_exists($prop, $this->metadata["access"])) $this->metadata["access"][$prop] = Model::AUTO_PROPERTY_NONE;
         }
 
-        print_r($this->metadata);
+        BeanHelper::$metadatas[get_class($this)] = $this->metadata;
 
         //save cache (if any)
         if ($pool instanceof CacheItemPoolInterface) {
