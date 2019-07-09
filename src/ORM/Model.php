@@ -22,30 +22,8 @@ abstract class Model extends SimpleModel implements LoggerAwareInterface, Contai
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 
-
     const VALID_BEAN = '/^[a-z][a-z0-9]+$/';
     const VALID_PARAM = '/^[a-zA-Z]\w+$/';
-
-    /**
-     * Can read property without a getter
-     */
-    const AUTO_PROPERTY_READ = 4;
-
-    /**
-     * Can Write property without a setter
-     */
-    const AUTO_PROPERTY_WRITE = 2;
-
-    /**
-     * Can Read and write properties without getter and/or setter
-     * but getter/setter will override this behaviour
-     */
-    const AUTO_PROPERTY_BOTH = 6;
-
-    /**
-     * Default behaviour
-     */
-    const AUTO_PROPERTY_NONE = 0;
 
     ////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
 
