@@ -2,17 +2,26 @@
 
 namespace Manju\Helpers;
 
-use Manju\Exceptions\ManjuException;
-use Manju\Interfaces\Converter;
-use Manju\ORM;
-use Manju\ORM\Model;
-use NGSOFT\Tools\Traits\Logger;
-use Psr\Log\LoggerAwareTrait;
-use RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper;
-use RedBeanPHP\OODBBean;
-use Throwable;
-use function NGSOFT\Tools\autoloadDir;
-use function NGSOFT\Tools\findClassesImplementing;
+use Manju\{
+    Bun, Converters\Date, Converters\Number, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter,
+    Interfaces\Converter, ORM, ORM\Model
+};
+use NGSOFT\Tools\{
+    Reflection\Parser, Traits\Logger
+};
+use Psr\{
+    Cache\CacheItemPoolInterface, Log\LoggerAwareTrait
+};
+use RedBeanPHP\{
+    BeanHelper\SimpleFacadeBeanHelper, OODBBean, SimpleModel
+};
+use ReflectionClass,
+    SplFileInfo,
+    Throwable;
+use const day;
+use function NGSOFT\Tools\{
+    autoloadDir, findClassesImplementing, toSnake
+};
 
 class BeanHelper extends SimpleFacadeBeanHelper {
 
@@ -34,14 +43,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var Model|null */
     protected $for;
 
-    /**
-     * Add a model to the list
-     * @param Model $model
-     */
-    public static function addModel(Model $model) {
-        if ($type = $model->getMeta("type")) self::$models[$type] = get_class($model);
-    }
-
+    /** {@inheritdoc} */
     public function getModelForBean(OODBBean $bean) {
         $type = $bean->getMeta('type');
         try {
@@ -58,6 +60,162 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             $this->log($exc->getMessage());
         }
         return parent::getModelForBean($bean);
+    }
+
+    /**
+     * Add a model to the list
+     * @param Model $model
+     */
+    public static function addModel(Model $model) {
+        $this->buildMeta($model);
+        if ($type = $model->getMeta("type")) self::$models[$type] = get_class($model);
+    }
+
+    /**
+     * @param Model $model
+     * @return void
+     * @throws ManjuException
+     */
+    private function buildMetas($model) {
+
+        if (!($model instanceof Model)) {
+            throw new ManjuException("Can only use trait " . __CLASS__ . "with class extending " . Model::class);
+        }
+
+        //loads converters
+        $converters = &self::$converters;
+        if (empty($converters)) {
+            foreach (findClassesImplementing(Converter::class) as $class) {
+                $conv = new $class();
+                $converters[$class] = $conv;
+                foreach ($conv->getTypes() as $keyword) {
+                    $converters[$keyword] = $conv;
+                }
+            }
+        }
+
+        //loads filters
+        $filters = &self::$filters;
+        if (empty($filters)) {
+            foreach (findClassesImplementing(AnnotationFilter::class) as $class) {
+                $filters[] = new $class();
+            }
+        }
+
+        //Reads from cache
+        $refl = new ReflectionClass($model);
+        if ($pool = ORM::getCachePool()) {
+            $fileinfo = new SplFileInfo($refl->getFileName());
+            //use filemtime to parse new metadatas when model is modified
+            $cachekey = md5($fileinfo->getMTime() . $fileinfo->getPathname());
+
+            $item = $pool->getItem($cachekey);
+            if ($item->isHit()) {
+                self::$metadatas[get_class($model)] = $item->get();
+                return;
+            }
+        }
+
+        $meta = [
+            //table name
+            "type" => null,
+            //property list
+            "properties" => [],
+            //properties data types
+            "converters" => [],
+            //defaults values (if property has a set value)
+            "defaults" => [],
+            // unique values
+            "unique" => [],
+            //not null values
+            "required" => [],
+            //relations
+            "relations" => [],
+            //enables created_at and updated_at
+            "timestamps" => false
+        ];
+
+        //set type(table) (without annotations)
+        if (
+                isset(static::$type)
+                and preg_match(Model::VALID_BEAN, static::$type)
+        ) {
+            $meta["type"] = static::$type;
+        } else {
+            $short = $refl->getShortName();
+            $snake = preg_replace('/_?(model|entity)_?/', "", toSnake($short));
+            $parts = explode("_", $snake);
+            $type = array_pop($parts);
+            if (preg_match(Model::VALID_BEAN, $type)) $meta["type"] = $type;
+        }
+
+
+        //reads properties from model class
+        foreach ($refl->getProperties() as $prop) {
+            if (
+                    ($prop->class !== Model::class )
+                    and ( $prop->class !== SimpleModel::class )
+                    and $prop->isProtected()
+                    and ! $prop->isPrivate() and ! $prop->isStatic()
+            ) {
+                $meta["properties"][] = $prop->name;
+                $meta["converters"][$prop->name] = Text::class;
+
+                $prop->setAccessible(true);
+                if ($model->{$prop->name} !== null) $meta["defaults"][$prop->name] = $prop->getValue($model);
+            }
+        }
+
+        //Reads annotations
+        $parser = new Parser(ORM::getPsrlogger());
+        if ($annotations = $parser->ParseAll($refl)) {
+            //parse only extended Models, not base models annotations
+            $annotations = array_filter($annotations, function ($ann) {
+                return !in_array($ann->reflector->class ?? "", [Model::class, SimpleModel::class, Bun::class]);
+            });
+            /**
+             * @var string
+             * @converter string
+             */
+            foreach ($annotations as $annotation) {
+                if (
+                        $annotation->annotationType === "PROPERTY"
+                        and ( $annotation->tag === "var" or $annotation->tag === "converter")
+                        and in_array($annotation->attributeName, $meta["properties"])
+                ) {
+                    if (is_string($annotation->value)) {
+                        $value = preg_replace('/^([a-zA-Z]+).*?$/', "$1", $annotation->value);
+                        if (isset($converters[$value])) {
+                            $meta["converters"][$annotation->attributeName] = get_class($converters[$value]);
+                        } else print_r($annotation);
+                    }
+                }
+            }
+            foreach ($filters as $filter) {
+                $filter->process($annotations, $meta);
+            }
+        }
+
+
+        //add id
+        $meta["properties"][] = "id";
+        $meta["converters"]["id"] = Number::class;
+        //add timestamps
+        if ($meta["timestamps"] === true) {
+            $meta["properties"] = array_merge($meta["properties"], ["created_at", "updated_at"]);
+            $meta["converters"] = array_merge($meta["converters"], [
+                "created_at" => Date::class,
+                "updated_at" => Date::class
+            ]);
+        }
+
+        self::$metadatas[get_class($model)] = $meta;
+        //save cache (if any)
+        if ($pool instanceof CacheItemPoolInterface) {
+            $item->set($meta);
+            $item->expiresAfter(1 * day);
+            $pool->save($item);
+        }
     }
 
     /**
@@ -82,7 +240,8 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         $models = findClassesImplementing(Model::class);
         if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
         foreach ($models as $model) {
-            self::addModel(new $model());
+            $instance = new $model();
+            self::addModel($instance);
         }
     }
 

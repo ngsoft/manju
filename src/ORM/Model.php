@@ -172,8 +172,42 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     }
 
     /** {@inheritdoc} */
-    public function __unset($name) {
+    public function __unset($prop) {
         $this->offsetUnset($prop);
+    }
+
+    ////////////////////////////   Events   ////////////////////////////
+
+    /**
+     * Reset the model with its defaults values
+     * @internal
+     */
+    public function _clear() {
+        if ($meta = $this->getMeta()) {
+            foreach ($meta["properties"] as $prop) {
+                $this->{$prop} = $meta["defaults"]["prop"] ?? null;
+            }
+            $this->id = 0;
+            //relations
+        }
+    }
+
+    /**
+     * Sync Model with Bean
+     * @internal
+     */
+    public function _reload() {
+        $this->_clear();
+        if ($meta = $this->getMeta()) {
+            $b = $this->bean;
+            foreach ($meta["converters"] as $converter => $prop) {
+                $value = $bean->{$prop};
+                $converter = new \Manju\Converters\B64Serializable();
+                if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
+            }
+            if (count($meta["unique"])) $bean->setMeta("sys.uniques", $meta["unique"]);
+            //relations
+        }
     }
 
 }

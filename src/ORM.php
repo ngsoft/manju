@@ -2,13 +2,15 @@
 
 namespace Manju;
 
-use Manju\Exceptions\ManjuException;
-use Manju\Helpers\Bean;
-use Manju\Helpers\BeanHelper;
-use Psr\Cache\CacheItemPoolInterface;
-use Psr\Log\LoggerInterface;
-use RedBeanPHP\Facade;
-use RedBeanPHP\RedException;
+use Manju\{
+    Exceptions\ManjuException, Helpers\BeanHelper, ORM\Bean
+};
+use Psr\{
+    Cache\CacheItemPoolInterface, Log\LoggerInterface
+};
+use RedBeanPHP\{
+    Facade, RedException
+};
 use function NGSOFT\Tools\autoloadDir;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
@@ -63,9 +65,19 @@ class ORM extends Facade {
             if (!isset(self::$toolboxes["default"])) {
                 foreach (self::$config["db"] as $connection => $params) {
                     if ($connection === "default") {
-                        self::setup($params["dsn"] ?? null, $params["username"] ?? null, $params["password"] ?? null, $params["frozen"] ?? false);
+                        self::setup(
+                                $params["dsn"] ?? null,
+                                $params["username"] ?? null,
+                                $params["password"] ?? null,
+                                $params["frozen"] ?? false);
                     } else {
-                        self::addDatabase($connection, $params["dsn"], $params["username"] ?? null, $params["password"] ?? null, $params["frozen"] ?? false);
+                        self::addDatabase(
+                                $connection,
+                                $params["dsn"],
+                                $params["username"] ?? null,
+                                $params["password"] ?? null,
+                                $params["frozen"] ?? false
+                        );
                     }
                 }
                 if (self::$config["connection"] !== "default") self::selectDatabase(self::$config["connection"]);
