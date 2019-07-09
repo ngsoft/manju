@@ -67,7 +67,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
      * @param Model $model
      */
     public static function addModel(Model $model) {
-        $this->buildMeta($model);
+        self::buildMeta($model);
         if ($type = $model->getMeta("type")) self::$models[$type] = get_class($model);
     }
 
@@ -76,7 +76,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
      * @return void
      * @throws ManjuException
      */
-    private function buildMetas($model) {
+    private static function buildMeta($model) {
 
         if (!($model instanceof Model)) {
             throw new ManjuException("Can only use trait " . __CLASS__ . "with class extending " . Model::class);
@@ -162,7 +162,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                 $meta["converters"][$prop->name] = Text::class;
 
                 $prop->setAccessible(true);
-                if ($model->{$prop->name} !== null) $meta["defaults"][$prop->name] = $prop->getValue($model);
+                if ($prop->getValue($model) !== null) $meta["defaults"][$prop->name] = $prop->getValue($model);
             }
         }
 

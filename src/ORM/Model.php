@@ -66,6 +66,19 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->updated_at;
     }
 
+    ////////////////////////////   MetaDatas   ////////////////////////////
+
+    /**
+     * Get Model Metadatas
+     * @param string|null $key
+     * @return mixed
+     */
+    public function getMeta(string $key = null) {
+        $meta = BeanHelper::$metadatas[get_class($this)];
+        if ($key === null) return $meta;
+        return $meta[$key] ?? null;
+    }
+
     ////////////////////////////   ArrayAccess   ////////////////////////////
 
     /**
@@ -201,11 +214,10 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
             foreach ($meta["converters"] as $converter => $prop) {
-                $value = $bean->{$prop};
-                $converter = new \Manju\Converters\B64Serializable();
+                $value = $b->{$prop};
                 if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
             }
-            if (count($meta["unique"])) $bean->setMeta("sys.uniques", $meta["unique"]);
+            if (count($meta["unique"])) $b->setMeta("sys.uniques", $meta["unique"]);
             //relations
         }
     }

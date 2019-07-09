@@ -18,15 +18,4 @@ use function NGSOFT\Tools\{
 
 trait Metadata {
 
-    /**
-     * Get Model Metadatas
-     * @param string|null $key
-     * @return mixed
-     */
-    public function getMeta(string $key = null) {
-        $meta = BeanHelper::$metadatas[get_class($this)];
-        if ($key === null) return $meta;
-        return [$key] ?? null;
-    }
-
 }
