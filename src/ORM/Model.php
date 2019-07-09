@@ -4,10 +4,11 @@ namespace Manju\ORM;
 
 use ArrayIterator,
     DateTime,
-    ErrorException,
-    JsonSerializable,
-    Manju\Helpers\BeanHelper,
-    NGSOFT\Tools\Interfaces\ArrayAccess;
+    JsonSerializable;
+use Manju\{
+    Exceptions\InvalidProperty, Helpers\BeanHelper
+};
+use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
     OODBBean, SimpleModel
 };
@@ -119,7 +120,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         if (method_exists($this, $getter)) {
             return $this->{$getter}();
         }
-        throw new ErrorException("Invalid Property $offset");
+        throw new InvalidProperty("Invalid Property $offset");
     }
 
     /** {@inheritdoc} */
@@ -127,7 +128,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
-        } else throw new ErrorException("Invalid Property $offset");
+        } else throw new InvalidProperty("Invalid Property $offset");
     }
 
     /** {@inheritdoc} */
