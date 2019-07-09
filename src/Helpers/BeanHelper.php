@@ -63,6 +63,37 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     /**
+     * Dispense or loads a bean for a given model
+     * @param Model $model
+     * @param int $id
+     */
+    public function dispenseFor(Model $model, int $id = null) {
+        if (($type = $model->getMeta("type"))) {
+            $this->for = $model;
+            if (is_int($id)) ORM::load($type, $id);
+            else ORM::dispense($type);
+        }
+    }
+
+    /**
+     * @param array<Model> $models
+     * @throws ManjuException
+     */
+    public function __construct(array $models) {
+        if ($logger = ORM::getPsrlogger()) $this->setLogger($logger);
+
+        foreach ($models as $path) {
+            autoloadDir($path);
+        }
+        $models = findClassesImplementing(Model::class);
+        if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
+        foreach ($models as $model) {
+            $instance = new $model();
+            self::addModel($instance);
+        }
+    }
+
+    /**
      * Add a model to the list
      * @param Model $model
      */
@@ -215,33 +246,6 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             $item->set($meta);
             $item->expiresAfter(1 * day);
             $pool->save($item);
-        }
-    }
-
-    /**
-     * Dispense or loads a bean for a given model
-     * @param Model $model
-     * @param int $id
-     */
-    public function dispenseFor(Model $model, int $id = null) {
-        if (($type = $model->getMeta("type"))) {
-            $this->for = $model;
-            if (is_int($id)) ORM::load($type, $id);
-            else ORM::dispense($type);
-        }
-    }
-
-    public function __construct(array $models) {
-        if ($logger = ORM::getPsrlogger()) $this->setLogger($logger);
-
-        foreach ($models as $path) {
-            autoloadDir($path);
-        }
-        $models = findClassesImplementing(Model::class);
-        if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
-        foreach ($models as $model) {
-            $instance = new $model();
-            self::addModel($instance);
         }
     }
 

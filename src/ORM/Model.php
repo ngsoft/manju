@@ -5,20 +5,15 @@ namespace Manju\ORM;
 use ArrayIterator,
     DateTime,
     ErrorException,
-    JsonSerializable;
-use Manju\Traits\{
-    DataTypes, Metadata
-};
-use NGSOFT\Tools\Interfaces\ArrayAccess;
+    JsonSerializable,
+    Manju\Helpers\BeanHelper,
+    NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
     OODBBean, SimpleModel
 };
 use function NGSOFT\Tools\toCamelCase;
 
 class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
-
-    use Metadata,
-        DataTypes;
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 
