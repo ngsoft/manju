@@ -2,23 +2,23 @@
 
 namespace Manju\ORM;
 
-use DateTime;
-use Manju\Traits\DataTypes;
-use Manju\Traits\Metadata;
-use NGSOFT\Tools\Interfaces\ContainerAware;
-use NGSOFT\Tools\Traits\Container;
-use NGSOFT\Tools\Traits\Logger;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
-use RedBeanPHP\SimpleModel;
+use ArrayIterator,
+    DateTime,
+    ErrorException,
+    JsonSerializable;
+use Manju\Traits\{
+    DataTypes, Metadata
+};
+use NGSOFT\Tools\Interfaces\ArrayAccess;
+use RedBeanPHP\{
+    OODBBean, SimpleModel
+};
+use function NGSOFT\Tools\toCamelCase;
 
-abstract class Model extends SimpleModel implements LoggerAwareInterface, ContainerAware {
+class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     use Metadata,
-        DataTypes,
-        Logger,
-        LoggerAwareTrait,
-        Container;
+        DataTypes;
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 
@@ -64,6 +64,116 @@ abstract class Model extends SimpleModel implements LoggerAwareInterface, Contai
      */
     public function getUpdatedAt(): ?DateTime {
         return $this->updated_at;
+    }
+
+    ////////////////////////////   ArrayAccess   ////////////////////////////
+
+    /**
+     * getProp()
+     * @param string $prop
+     * @return string
+     */
+    private function getGetterMethod(string $prop): string {
+        return sprintf("get%s", toCamelCase($prop));
+    }
+
+    /**
+     * setProp($value)
+     * @param string $prop
+     * @return string
+     */
+    private function getSetterMethod(string $prop): string {
+        return sprintf("get%s", toCamelCase($prop));
+    }
+
+    /**
+     * Exports Model data to Array
+     * @return array
+     */
+    public function toArray(): array {
+        $array = [];
+        foreach ($this->getMeta("properties") as $key) {
+            $getter = $this->getGetterMethod($key);
+            if (method_exists($this, $getter)) $array[$key] = $this->{$getter}();
+        }
+        return $array;
+    }
+
+    /** {@inheritdoc} */
+    public function offsetExists($offset) {
+        $getter = $this->getGetterMethod($offset);
+        return method_exists($this, $getter);
+    }
+
+    /** {@inheritdoc} */
+    public function offsetGet($offset) {
+        $getter = $this->getGetterMethod($offset);
+        if (method_exists($this, $getter)) {
+            return $this->{$getter}();
+        }
+        throw new ErrorException("Invalid Property $offset");
+    }
+
+    /** {@inheritdoc} */
+    public function offsetSet($offset, $value) {
+        $setter = $this->getSetterMethod($offset);
+        if (method_exists($this, $setter)) {
+            $this->{$setter}($value);
+        } else throw new ErrorException("Invalid Property $offset");
+    }
+
+    /** {@inheritdoc} */
+    public function offsetUnset($offset) {
+        $setter = $this->getSetterMethod($offset);
+        if (method_exists($this, $setter)) {
+            $this->{$setter}(null);
+        }
+    }
+
+    /** {@inheritdoc} */
+    public function count() {
+        return count($this->toArray());
+    }
+
+    /** {@inheritdoc} */
+    public function getIterator() {
+        return new ArrayIterator($this->toArray());
+    }
+
+    public function jsonSerialize() {
+        return $this->toArray();
+    }
+
+    ////////////////////////////   __magic_methods   ////////////////////////////
+
+    /** {@inheritdoc} */
+    public function __get($prop) {
+        return $this->offsetGet($prop);
+    }
+
+    /** {@inheritdoc} */
+    public function __set($prop, $value) {
+        $this->offsetSet($prop, $value);
+    }
+
+    /** {@inheritdoc} */
+    public function __isset($key) {
+        return $this->offsetExists($key);
+    }
+
+    /** {@inheritdoc} */
+    public function __clone() {
+        if ($this->bean instanceof OODBBean) $this->bean = clone $this->bean;
+    }
+
+    /** {@inheritdoc} */
+    public function __toString() {
+        return var_export($this->toArray(), true);
+    }
+
+    /** {@inheritdoc} */
+    public function __unset($name) {
+        $this->offsetUnset($prop);
     }
 
 }
