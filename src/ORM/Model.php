@@ -6,12 +6,13 @@ use ArrayIterator,
     DateTime,
     JsonSerializable;
 use Manju\{
-    Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, ORM
+    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, ORM
 };
 use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
     OODBBean, SimpleModel
 };
+use Throwable;
 use function NGSOFT\Tools\toCamelCase;
 
 /**
@@ -35,7 +36,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     /**
      * @var int
      */
-    private $id;
+    private $id = 0;
 
     /**
      * @var DateTime|null
@@ -57,18 +58,18 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Get Entry Creation Date
-     * @return DateTime|null
+     * @return DateTime
      */
-    public function getCreatedAt(): ?DateTime {
-        return $this->created_at;
+    public function getCreatedAt(): DateTime {
+        return $this->created_at ?? new DateTime();
     }
 
     /**
      * Get Last Update Date
      * @return DateTime|null
      */
-    public function getUpdatedAt(): ?DateTime {
-        return $this->updated_at;
+    public function getUpdatedAt(): DateTime {
+        return $this->updated_at ?? new DateTime();
     }
 
     ////////////////////////////   SQL Helpers   ////////////////////////////
@@ -114,7 +115,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return 0;
     }
 
-////////////////////////////   CRUD   ////////////////////////////
+    ////////////////////////////   CRUD   ////////////////////////////
 
     /**
      * Loads a bean with the data corresponding to the id
@@ -175,7 +176,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
             $this->bean->setMeta("tainted", true);
             try {
                 $id = (int) ORM::store($this->bean);
-            } catch (\Throwable $exc) {
+            } catch (Throwable $exc) {
                 echo $exc->getCode();
             }
         }
@@ -259,7 +260,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         if (method_exists($this, $getter)) {
             $value = &$this->{$getter}();
             return $value;
-        } else throw new InvalidProperty("Invalid Property $offset");
+        } else throw new InvalidProperty("Invalid Property " . get_class($this) . "::$" . $offset);
     }
 
     /** {@inheritdoc} */
@@ -268,7 +269,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
-        } else throw new InvalidProperty("Invalid Property $offset");
+        } else throw new InvalidProperty("Invalid Property " . get_class($this) . "::$" . $offset);
     }
 
     /** {@inheritdoc} */
@@ -336,13 +337,20 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Sync Model with Bean
      * @internal
      */
-    public function _reload() {
-        //$this->_clear();
+    public function _load() {
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
+
             foreach ($meta->converters as $prop => $converter) {
                 $value = $b->{$prop};
                 if ($value !== null) $this->{$prop} = $converter::convertFromBean($value);
+            }
+            if ($meta->timestamps === true) {
+                foreach (["created_at", "updated_at"] as $prop) {
+                    $value = $b->{$prop};
+                    if ($value !== null) $value = Date::convertFromBean($value);
+                    $this->{$prop} = $value;
+                }
             }
             if (count($meta->unique)) $b->setMeta("sys.uniques", $meta->unique);
         }
@@ -385,10 +393,11 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function _update() {
         if ($meta = $this->getMeta()) {
+            $b = $this->bean;
             if ($meta->timestamps === true) {
                 $now = new DateTime();
-                if ($this->created_at === null) $this->created_at = $now;
-                $this->updated_at = $now;
+                if ($this->created_at === null) $this->created_at = $b->created_at = $now;
+                $this->updated_at = $b->updated_at = $now;
             }
             foreach ($meta->converters as $prop => $converter) {
                 if ($prop === "id") continue;

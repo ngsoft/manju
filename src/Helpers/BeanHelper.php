@@ -13,7 +13,6 @@ use RedBeanPHP\{
 use ReflectionClass,
     SplFileInfo,
     Throwable;
-use const day;
 use function NGSOFT\Tools\{
     array_to_object, autoloadDir, findClassesImplementing, toSnake
 };
@@ -34,6 +33,9 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
     /** @var Model|null */
     protected static $for;
+
+    /** @var int */
+    protected static $metacachettl;
 
     /** {@inheritdoc} */
     public function getModelForBean(OODBBean $bean) {
@@ -70,11 +72,11 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
     /**
      * @param array<Model> $models
+     * @param int $metacachettl
      * @throws ManjuException
      */
-    public function __construct(array $models) {
-
-
+    public function __construct(array $models, int $metacachettl = null) {
+        if (is_int($metacachettl)) self::$metacachettl = $metacachettl;
         foreach ($models as $path) {
             autoloadDir($path);
         }
@@ -225,7 +227,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         //save cache (if any)
         if ($pool instanceof CacheItemPoolInterface) {
             $item->set($meta);
-            $item->expiresAfter(1 * day);
+            $item->expiresAfter(self::$metacachettl);
             $pool->save($item);
         }
 

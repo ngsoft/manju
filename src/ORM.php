@@ -93,7 +93,7 @@ class ORM extends Facade {
             //preload Filters
             autoloadDir(__DIR__ . "/Filters");
 
-            $helper = new BeanHelper(self::$config["models"]);
+            $helper = new BeanHelper(self::$config["models"], self::$config["metacachettl"]);
             self::getRedBean()->setBeanHelper($helper);
 
 
