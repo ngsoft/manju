@@ -219,7 +219,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                         $value = preg_replace('/^([a-zA-Z]+).*?$/', "$1", $annotation->value);
                         if (isset($converters[$value])) {
                             $meta["converters"][$annotation->attributeName] = get_class($converters[$value]);
-                        } else print_r($annotation);
+                        }
                     }
                 }
             }

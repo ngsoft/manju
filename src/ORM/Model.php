@@ -16,12 +16,13 @@ use function NGSOFT\Tools\toCamelCase;
 
 class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
-    ////////////////////////////   CONSTANTS   ////////////////////////////
+////////////////////////////   CONSTANTS   ////////////////////////////
 
     const VALID_BEAN = '/^[a-z][a-z0-9]+$/';
     const VALID_PARAM = '/^[a-zA-Z]\w+$/';
+    const TO_MANY_LIST = '/^(shared|own|xown)([A-Z][a-z0-9]+)List$/';
 
-    ////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
+////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
 
     /** @var string|null */
     public static $type;
@@ -65,7 +66,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->updated_at;
     }
 
-    ////////////////////////////   SQL Helpers   ////////////////////////////
+////////////////////////////   SQL Helpers   ////////////////////////////
 
     /**
      * Finds entries using an optional SQL statement
@@ -108,7 +109,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return 0;
     }
 
-    ////////////////////////////   CRUD   ////////////////////////////
+////////////////////////////   CRUD   ////////////////////////////
 
     /**
      * Loads a bean with the data corresponding to the id
@@ -159,7 +160,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return null;
     }
 
-    ////////////////////////////   MetaDatas   ////////////////////////////
+////////////////////////////   MetaDatas   ////////////////////////////
 
     /**
      * Get Model Metadatas
@@ -171,6 +172,44 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $meta = BeanHelper::$metadatas[get_class($this)];
         if ($key === null) return $meta;
         return $meta[$key] ?? null;
+    }
+
+////////////////////////////   Relations   ////////////////////////////
+
+    /**
+     * Loads Relation Mapper on demand
+     * you need to run that before accessing a relation key
+     * @return $this
+     */
+    public function loadRelations() {
+
+        if (
+                ($meta = $this->getMeta())
+                and $this->bean instanceof OODBBean
+        ) {
+            foreach ($meta["relations"] as $key => $relation) {
+                $b = $this->bean; $value = null;
+                $type = strtolower($relation["type"]);
+                switch ($type) {
+                    case "onetomany":
+                        $key = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                    case "manytomany":
+                        $key = $key ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        if ($via = $relation["via"] ?? null) $b = $b->via($via);
+                        $value = array_merge([], $b->{$key});
+                        $value = array_map(function ($bean) { return $bean->box; }, $value);
+                        break;
+                    case "manytoone":
+                        $key = BeanHelper::$metadatas[$relation["target"]]["type"];
+                        $value = $b->{$key};
+                        break;
+                }
+                $this->{$key} = $value;
+            }
+        }
+
+
+        return $this;
     }
 
     ////////////////////////////   ArrayAccess   ////////////////////////////
@@ -295,7 +334,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 $this->{$prop} = $meta["defaults"]["prop"] ?? null;
             }
             $this->id = 0;
-            //relations
+            foreach (array_keys($meta["relations"]) as $key) {
+                $this->{$key} = null;
+            }
         }
     }
 
@@ -304,7 +345,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @internal
      */
     public function _reload() {
-        $this->_clear();
+        //$this->_clear();
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
             foreach ($meta["converters"] as $converter => $prop) {
@@ -312,7 +353,6 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
             }
             if (count($meta["unique"])) $b->setMeta("sys.uniques", $meta["unique"]);
-            //relations
         }
     }
 
@@ -365,6 +405,24 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 $this->bean->{$prop} = $value;
             }
             //relations
+            $b = $this->bean;
+            foreach ($meta["relations"] as $key => $relation) {
+                $type = strtolower($relation["type"]);
+                switch ($type) {
+                    case "onetomany":
+                        $key = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                    case "manytomany":
+                        $key = $key ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        if ($via = $relation["via"] ?? null) $b = $b->via($via);
+                        $value = array_merge([], $b->{$key});
+                        $value = array_map(function ($bean) { return $bean->box; }, $value);
+                        break;
+                    case "manytoone":
+                        $key = BeanHelper::$metadatas[$relation["target"]]["type"];
+                        $value = $b->{$key};
+                        break;
+                }
+            }
         }
     }
 
