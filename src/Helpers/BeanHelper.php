@@ -3,15 +3,10 @@
 namespace Manju\Helpers;
 
 use Manju\{
-    Bun, Converters\Date, Converters\Number, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter,
-    Interfaces\Converter, ORM, ORM\Model
+    Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model
 };
-use NGSOFT\Tools\{
-    Reflection\Parser, Traits\Logger
-};
-use Psr\{
-    Cache\CacheItemPoolInterface, Log\LoggerAwareTrait
-};
+use NGSOFT\Tools\Reflection\Parser,
+    Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, OODBBean, SimpleModel
 };
@@ -20,13 +15,10 @@ use ReflectionClass,
     Throwable;
 use const day;
 use function NGSOFT\Tools\{
-    autoloadDir, findClassesImplementing, toSnake
+    array_to_object, autoloadDir, findClassesImplementing, toSnake
 };
 
 class BeanHelper extends SimpleFacadeBeanHelper {
-
-    use Logger,
-        LoggerAwareTrait;
 
     /** @var array<string,string> */
     protected static $models = [];
@@ -81,7 +73,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
      * @throws ManjuException
      */
     public function __construct(array $models) {
-        if ($logger = ORM::getPsrlogger()) $this->setLogger($logger);
+
 
         foreach ($models as $path) {
             autoloadDir($path);
@@ -142,7 +134,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
             $item = $pool->getItem($cachekey);
             if ($item->isHit()) {
-                self::$metadatas[get_class($model)] = $item->get();
+                self::$metadatas[get_class($model)] = array_to_object($item->get());
                 return;
             }
         }
@@ -235,15 +227,14 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             unset($meta["ignore"]);
         }
 
-
-
-        self::$metadatas[get_class($model)] = $meta;
         //save cache (if any)
         if ($pool instanceof CacheItemPoolInterface) {
             $item->set($meta);
             $item->expiresAfter(1 * day);
             $pool->save($item);
         }
+
+        self::$metadatas[get_class($model)] = array_to_object($meta);
     }
 
 }

@@ -18,20 +18,12 @@ class Bean extends OODBBean {
         return null;
     }
 
-    public function dispense() {
-        // ($model = $this->getModel()) and $model->_reload();
-    }
-
     public function open() {
-        ($model = $this->getModel()) and $model->_reload();
+        ($model = $this->getModel()) and $model->_load();
     }
 
     public function after_update() {
-        ($model = $this->getModel()) and $model->_reload();
-    }
-
-    public function after_delete() {
-        ($model = $this->getModel()) and $model->_clear();
+        ($model = $this->getModel()) and $model->_load();
     }
 
     public function update() {
@@ -39,6 +31,14 @@ class Bean extends OODBBean {
             $model->_validate(); ; //use validators
             $model->_update($model, '_update'); //inject model data into bean
         }
+    }
+
+    public function dispense() {
+        // ($model = $this->getModel()) and $model->_reload();
+    }
+
+    public function after_delete() {
+        //($model = $this->getModel()) and $model->_clear();
     }
 
     public function delete() {

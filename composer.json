@@ -10,7 +10,9 @@
             "homepage": "https://github.com/ngsoft"
         }],
     "require-dev": {
-        "phan/phan": "*"
+        "phan/phan": "*",
+        "psr/log": "*",
+        "psr/cache": "*"
     },
     "require": {
         "php": ">=7.1",

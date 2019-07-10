@@ -14,15 +14,20 @@ use RedBeanPHP\{
 };
 use function NGSOFT\Tools\toCamelCase;
 
+/**
+ * @property-read int $id
+ * @property-read DateTime $created_at
+ * @property-read DateTime $updated_at
+ */
 class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
-////////////////////////////   CONSTANTS   ////////////////////////////
+    ////////////////////////////   CONSTANTS   ////////////////////////////
 
     const VALID_BEAN = '/^[a-z][a-z0-9]+$/';
     const VALID_PARAM = '/^[a-zA-Z]\w+$/';
     const TO_MANY_LIST = '/^(shared|own|xown)([A-Z][a-z0-9]+)List$/';
 
-////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
+    ////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
 
     /** @var string|null */
     public static $type;
@@ -30,17 +35,17 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     /**
      * @var int
      */
-    protected $id;
+    private $id;
 
     /**
      * @var DateTime|null
      */
-    protected $created_at = null;
+    private $created_at;
 
     /**
      * @var DateTime|null
      */
-    protected $updated_at = null;
+    private $updated_at;
 
     /**
      * Get the Entry ID
@@ -66,7 +71,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->updated_at;
     }
 
-////////////////////////////   SQL Helpers   ////////////////////////////
+    ////////////////////////////   SQL Helpers   ////////////////////////////
 
     /**
      * Finds entries using an optional SQL statement
@@ -75,7 +80,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return array<static>
      */
     public static function find(string $sql = null, array $bindings = []): array {
-        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
             return array_map(function ($bean) {
                 return $bean->box();
             }, ORM::find($type, $sql, $bindings));
@@ -90,7 +95,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return static|null
      */
     public static function findOne(string $sql = null, array $bindings = []) {
-        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
             if ($result = ORM::findOne($type, $sql, $bindings)) return $result->box();
         }
         return null;
@@ -98,12 +103,12 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Count the number of entries of current Model
-     * @param string $sql additional SQL snippe
+     * @param string $sql additional SQL snippet
      * @param array $bindings parameters to bind to SQL
      * @return int
      */
     public static function countEntries(string $sql = "", array $bindings = []): int {
-        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
             return ORM::count($type, $sql, $bindings);
         }
         return 0;
@@ -121,6 +126,14 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $i = new static();
         BeanHelper::dispenseFor($i, $id);
         return $i;
+    }
+
+    /**
+     * Creates A new Model instance
+     * @return static
+     */
+    public static function create() {
+        return self::load();
     }
 
     /**
@@ -164,7 +177,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $id ?? null;
     }
 
-////////////////////////////   MetaDatas   ////////////////////////////
+    ////////////////////////////   MetaDatas   ////////////////////////////
 
     /**
      * Get Model Metadatas
@@ -175,7 +188,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     public function getMeta(string $key = null) {
         $meta = BeanHelper::$metadatas[get_class($this)];
         if ($key === null) return $meta;
-        return $meta[$key] ?? null;
+        return $meta->{$key} ?? null;
     }
 
     ////////////////////////////   ArrayAccess   ////////////////////////////
@@ -204,33 +217,46 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function toArray(): array {
         $array = [];
-        foreach ($this->getMeta("properties") as $key) {
+        $props = array_merge(["id"], $$this->getMeta("properties"));
+        foreach ($props as $key) {
             $getter = $this->getGetterMethod($key);
             if (method_exists($this, $getter)) $array[$key] = $this->{$getter}();
         }
         return $array;
     }
 
-    /** {@inheritdoc} */
-    public function offsetExists($offset) {
-        $getter = $this->getGetterMethod($offset);
-        return method_exists($this, $getter);
+    /**
+     * Import array into new Model
+     * @param array $array
+     * @return static
+     */
+    public static function __set_state(array $array) {
+        $i = self::load();
+        foreach ($array as $k => $v) {
+            $i->offsetSet($k, $v);
+        }
+        return $i;
     }
 
     /** {@inheritdoc} */
-    public function offsetGet($offset) {
+    public function offsetExists($offset) {
+        $getter = $this->getGetterMethod($offset);
+        return method_exists($this, $getter) && $this->{$getter}() !== null;
+    }
+
+    /** {@inheritdoc} */
+    public function &offsetGet($offset) {
         $getter = $this->getGetterMethod($offset);
         if (method_exists($this, $getter)) {
             $value = &$this->{$getter}();
             return $value;
-        }
-        throw new InvalidProperty("Invalid Property $offset");
+        } else throw new InvalidProperty("Invalid Property $offset");
     }
 
     /** {@inheritdoc} */
     public function offsetSet($offset, $value) {
-        $setter = $this->getSetterMethod($offset);
 
+        $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
         } else throw new InvalidProperty("Invalid Property $offset");
@@ -254,6 +280,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return new ArrayIterator($this->toArray());
     }
 
+    /** {@inheritdoc} */
     public function jsonSerialize() {
         return $this->toArray();
     }
@@ -299,8 +326,8 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function _clear() {
         if ($meta = $this->getMeta()) {
-            foreach ($meta["properties"] as $prop) {
-                $this->{$prop} = $meta["defaults"]["prop"] ?? null;
+            foreach ($meta->properties as $prop) {
+                $this->{$prop} = $meta->defaults->{$prop} ?? null;
             }
             $this->id = 0;
         }
@@ -314,12 +341,11 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         //$this->_clear();
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
-            foreach ($meta["converters"] as $prop => $converter) {
-                $converter = BeanHelper::$converters[$converter];
+            foreach ($meta->converters as $prop => $converter) {
                 $value = $b->{$prop};
-                if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
+                if ($value !== null) $this->{$prop} = $converter::convertFromBean($value);
             }
-            if (count($meta["unique"])) $b->setMeta("sys.uniques", $meta["unique"]);
+            if (count($meta->unique)) $b->setMeta("sys.uniques", $meta->unique);
         }
     }
 
@@ -331,16 +357,15 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function _validate() {
         if ($meta = $this->getMeta()) {
-            foreach ($meta["required"] as $prop) {
+            foreach ($meta->required as $prop) {
                 if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
             }
-            foreach ($meta["converters"] as $prop => $converter) {
-                if (in_array($prop, ["id", "created_at", "updated_at"])) continue;
-                $converter = BeanHelper::$converters[$converter];
-                if (!$converter->isValid($this->{$prop})) {
+            foreach ($meta->converters as $prop => $converter) {
+
+                if (!$converter::isValid($this->{$prop})) {
                     throw new ValidationError(
                             get_class($this) . '::$' . $prop . " Invalid Type " .
-                            $converter->getTypes()[0] . " requested but " .
+                            $converter::getTypes()[0] . " requested but " .
                             gettype($this->{$prop}) . " given."
                     );
                 }
@@ -361,17 +386,14 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function _update() {
         if ($meta = $this->getMeta()) {
-            if ($meta["timestamps"] === true) {
-                $now = time();
-                if ($this->created_at === null) {
-                    $this->created_at = BeanHelper::$converters[\Manju\Converters\Date::class]->convertFromBean($now);
-                }
-                $this->updated_at = BeanHelper::$converters[\Manju\Converters\Date::class]->convertFromBean($now);
+            if ($meta->timestamps === true) {
+                $now = new DateTime();
+                if ($this->created_at === null) $this->created_at = $now;
+                $this->updated_at = $now;
             }
-            foreach ($meta["converters"] as $prop => $converter) {
-                $converter = BeanHelper::$converters[$converter];
+            foreach ($meta->converters as $prop => $converter) {
                 if ($prop === "id") continue;
-                $value = $converter->convertToBean($this->{$prop});
+                $value = $converter::convertToBean($this->{$prop});
                 $this->bean->{$prop} = $value;
             }
         }
