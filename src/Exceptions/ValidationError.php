@@ -2,7 +2,11 @@
 
 namespace Manju\Exceptions;
 
-class ValidationError extends \InvalidArgumentException {
+use InvalidArgumentException,
+    Manju\ORM,
+    Psr\Log\LoggerInterface;
+
+class ValidationError extends InvalidArgumentException {
 
     public function __construct(string $message = "", int $code = 0, $previous = NULL) {
         $logger = ORM::getLogger();

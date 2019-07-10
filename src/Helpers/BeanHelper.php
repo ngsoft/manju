@@ -65,7 +65,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /**
      * Dispense or loads a bean for a given model
      * @param Model $model
-     * @param int $id
+     * @param int|null $id
      */
     public function dispenseFor(Model $model, int $id = null) {
         if (($type = $model->getMeta("type"))) {
@@ -168,10 +168,10 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
         //set type(table) (without annotations)
         if (
-                isset(static::$type)
-                and preg_match(Model::VALID_BEAN, static::$type)
+                isset($model::$type)
+                and preg_match(Model::VALID_BEAN, $model::$type)
         ) {
-            $meta["type"] = static::$type;
+            $meta["type"] = $model::$type;
         } else {
             $short = $refl->getShortName();
             $snake = preg_replace('/_?(model|entity)_?/', "", toSnake($short));

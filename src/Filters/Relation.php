@@ -2,9 +2,8 @@
 
 namespace Manju\Filters;
 
-use Manju\Helpers\AnnotationFilterAbstract;
-use Manju\ORM\Model;
-use NGSOFT\Tools\Reflection\Annotation;
+use Manju\Helpers\AnnotationFilterAbstract,
+    NGSOFT\Tools\Reflection\Annotation;
 
 class Relation extends AnnotationFilterAbstract {
 

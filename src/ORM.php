@@ -66,15 +66,16 @@ class ORM extends Facade {
                 foreach (self::$config["db"] as $connection => $params) {
                     if ($connection === "default") {
                         self::setup(
-                                $params["dsn"] ?? null,
-                                $params["username"] ?? null,
-                                $params["password"] ?? null,
-                                $params["frozen"] ?? false);
+                                is_string($params["dsn"]) ? $params["dsn"] : null,
+                                is_string($params["username"]) ? $params["username"] : null,
+                                is_string($params["password"]) ? $params["password"] : null,
+                                is_bool($params["frozen"]) ? $params["frozen"] : false
+                        );
                     } else {
                         self::addDatabase(
                                 $connection,
-                                $params["dsn"],
-                                $params["username"] ?? null,
+                                (string) $params["dsn"],
+                                $params["username"] ?? "",
                                 $params["password"] ?? null,
                                 $params["frozen"] ?? false
                         );

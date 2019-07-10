@@ -50,7 +50,6 @@ class B64Serializable implements Converter {
      * @return array|Serializable|null
      */
     public function b64unserialize(string $value) {
-        $obj = null;
         $str = base64_decode($value);
         $obj = unserialize($str);
         return $obj;

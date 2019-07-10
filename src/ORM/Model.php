@@ -6,7 +6,7 @@ use ArrayIterator,
     DateTime,
     JsonSerializable;
 use Manju\{
-    Exceptions\InvalidProperty, Helpers\BeanHelper
+    Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper
 };
 use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
@@ -22,6 +22,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     const VALID_PARAM = '/^[a-zA-Z]\w+$/';
 
     ////////////////////////////   DEFAULTS PROPERTIES   ////////////////////////////
+
+    /** @var string|null */
+    public static $type;
 
     /**
      * @var int
@@ -62,10 +65,22 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->updated_at;
     }
 
+    ////////////////////////////   Methods To Override   ////////////////////////////
+
+    /**
+     * Method used to validate the model
+     * @param string $prop
+     * @param mixed $value
+     * @return bool
+     */
+    //protected function validateModel(string $prop, $value): bool {
+    //    return true;
+    //}
     ////////////////////////////   MetaDatas   ////////////////////////////
 
     /**
      * Get Model Metadatas
+     *
      * @param string|null $key
      * @return mixed
      */
@@ -191,7 +206,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Reset the model with its defaults values
      * @internal
      */
-    public function _clear() {
+    private function _clear() {
         if ($meta = $this->getMeta()) {
             foreach ($meta["properties"] as $prop) {
                 $this->{$prop} = $meta["defaults"]["prop"] ?? null;
@@ -205,7 +220,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Sync Model with Bean
      * @internal
      */
-    public function _reload() {
+    private function _reload() {
         $this->_clear();
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
@@ -214,6 +229,58 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
             }
             if (count($meta["unique"])) $b->setMeta("sys.uniques", $meta["unique"]);
+            //relations
+        }
+    }
+
+    /**
+     * Validate Model Datas
+     * @internal
+     * @suppress PhanUndeclaredMethod
+     * @throws ValidationError Prevents Redbeans from Writing wrong datas
+     */
+    private function _validate() {
+        if ($meta = $this->getMeta()) {
+            foreach ($meta["required"] as $prop) {
+                if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
+            }
+            foreach ($meta["converter"] as $prop => $converter) {
+                if (!$converter->isValid($this->{$prop})) {
+                    throw new ValidationError(
+                            get_class($this) . '::$' . $prop . " Invalid Type " .
+                            $converter->getTypes()[0] . " requested but " .
+                            gettype($this->{$prop}) . " given."
+                    );
+                }
+
+                if (
+                        method_exists($this, "validateModel")
+                        and ( false === $this->validateModel($prop, $this->{$prop}))
+                ) {
+                    throw new ValidationError(get_class($this) . "::validateModel($prop, ...) failed the validation test.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Write datas to bean
+     * @internal
+     */
+    private function _update() {
+        if ($meta = $this->getMeta()) {
+            if ($meta["timestamps"] === true) {
+                $now = time();
+                if ($this->created_at === null) {
+                    $this->created_at = $meta["converters"]["created_at"]->convertFromBean($now);
+                }
+                $this->updated_at = $meta["converters"]["updated_at"]->convertFromBean($now);
+            }
+            foreach ($meta["converters"] as $prop => $converter) {
+                if ($prop === "id") continue;
+                $value = $converter->convertToBean($this->{$prop});
+                $this->bean->{$prop} = $value;
+            }
             //relations
         }
     }

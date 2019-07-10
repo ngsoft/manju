@@ -1,8 +1,9 @@
 <?php
 
-namespace Manju\Helpers;
+namespace Manju\ORM;
 
-use Manju\ORM\Model,
+use Closure,
+    Manju\ORM\Model,
     RedBeanPHP\OODBBean;
 
 class Bean extends OODBBean {
@@ -14,28 +15,43 @@ class Bean extends OODBBean {
      */
     private function getModel(): ?Model {
         if ($model = $this->getMeta("model") and $model instanceof Model) return $model;
+        return null;
+    }
+
+    /**
+     * Binds a callback to execute private methods
+     * @param Model $model
+     * @param string $method
+     * @param mixed ...$args
+     */
+    private function executePrivateMethodModel(Model $model, string $method, ...$args) {
+        $c = function(string $method, ...$args) {
+            if (method_exists($this, $method)) return $this->{$method}(...$args);
+        };
+        $c = Closure::bind($c, $model);
+        return $c($method, ...$args);
     }
 
     public function dispense() {
-        ($model = $this->getModel())and $model->_reload();
+        ($model = $this->getModel()) and $this->executePrivateMethodModel($model, '_reload');
     }
 
     public function open() {
-        ($model = $this->getModel()) and $model->_reload();
+        ($model = $this->getModel()) and $this->executePrivateMethodModel($model, '_reload');
     }
 
     public function after_update() {
-        ($model = $this->getModel()) and $model->_reload();
+        ($model = $this->getModel()) and $this->executePrivateMethodModel($model, '_reload');
     }
 
     public function after_delete() {
-        if ($model = $this->getModel()) $model->_clear();
+        ($model = $this->getModel()) and $this->executePrivateMethodModel($model, '_clear');
     }
 
     public function update() {
         if ($model = $this->getModel()) {
-            //$model->__validate(); //use validators
-            //$model->__update(); //inject model data into bean
+            $this->executePrivateMethodModel($model, '_validate'); //use validators
+            $this->executePrivateMethodModel($model, '_update'); //inject model data into bean
         }
     }
 

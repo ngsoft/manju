@@ -7,7 +7,7 @@ use NGSOFT\Tools\Reflection\Annotation;
 
 abstract class AnnotationFilterAbstract implements AnnotationFilter {
 
-    /** @var array<string> */
+    /** @var array<?string> */
     public $types = [];
 
     /** @var array<string> */

@@ -2,7 +2,10 @@
 
 namespace Manju\Converters;
 
-use Manju\Interfaces\Converter;
+use DateTime;
+use Manju\{
+    Exceptions\ManjuException, Interfaces\Converter
+};
 
 class Date implements Converter {
 
@@ -10,17 +13,17 @@ class Date implements Converter {
 
     /** {@inheritdoc} */
     public function convertFromBean($value) {
-        if ($value instanceof \DateTime) return $value;
-        elseif (is_string($value)) return new \DateTime($value);
-        elseif (is_int($value)) return new \DateTime(date(self::FORMAT, $value));
-        else return new \DateTime('now');
+        if ($value instanceof DateTime) return $value;
+        elseif (is_string($value)) return new DateTime($value);
+        elseif (is_int($value)) return new DateTime(date(self::FORMAT, $value));
+        else return new DateTime('now');
     }
 
     /** {@inheritdoc} */
     public function convertToBean($value) {
-        if ($value instanceof \DateTime) return $value;
-        if (is_numeric($value)) return new \DateTime(date(self::FORMAT, $value));
-        elseif (is_string($value)) return new \DateTime($value);
+        if ($value instanceof DateTime) return $value;
+        if (is_numeric($value)) return new DateTime(date(self::FORMAT, $value));
+        elseif (is_string($value)) return new DateTime($value);
         throw new ManjuException("Cannot Convert to \DateTime");
     }
 
