@@ -146,8 +146,6 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             "properties" => [],
             //properties data types
             "converters" => [],
-            //defaults values (if property has a set value)
-            "defaults" => [],
             // unique values
             "unique" => [],
             //not null values
@@ -181,9 +179,6 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             ) {
                 $meta["properties"][] = $prop->name;
                 $meta["converters"][$prop->name] = Text::class;
-
-                $prop->setAccessible(true);
-                if ($prop->getValue($model) !== null) $meta["defaults"][$prop->name] = $prop->getValue($model);
             }
         }
 
@@ -219,7 +214,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
 
         if (isset($meta["ignore"])) {
             foreach ($meta["ignore"] as $key) {
-                unset($meta["converters"][$key], $meta["defaults"][$key]);
+                unset($meta["converters"][$key]);
                 foreach (["properties", "required", "unique"] as $metakey) {
                     $meta[$metakey] = array_filter($meta[$metakey], function ($val) use($key) { return $key !== $val; });
                 }

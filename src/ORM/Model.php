@@ -130,9 +130,14 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Creates A new Model instance
+     * @param Model|bull $model Description
      * @return static
      */
-    public static function create() {
+    public static function create(Model $model = null) {
+        if ($model instanceof static) {
+            BeanHelper::dispenseFor($model);
+            return $model;
+        }
         return self::load();
     }
 
@@ -216,8 +221,10 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return array
      */
     public function toArray(): array {
+        $this->bean or static::create($this);
         $array = [];
         $props = array_merge(["id"], $$this->getMeta("properties"));
+        if ($this->getMeta("timestamps")) $props = array_merge($props, ["created_at", "updated_at"]);
         foreach ($props as $key) {
             $getter = $this->getGetterMethod($key);
             if (method_exists($this, $getter)) $array[$key] = $this->{$getter}();
@@ -240,12 +247,14 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /** {@inheritdoc} */
     public function offsetExists($offset) {
+        $this->bean or static::create($this);
         $getter = $this->getGetterMethod($offset);
         return method_exists($this, $getter) && $this->{$getter}() !== null;
     }
 
     /** {@inheritdoc} */
     public function &offsetGet($offset) {
+        $this->bean or static::create($this);
         $getter = $this->getGetterMethod($offset);
         if (method_exists($this, $getter)) {
             $value = &$this->{$getter}();
@@ -255,7 +264,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /** {@inheritdoc} */
     public function offsetSet($offset, $value) {
-
+        $this->bean or static::create($this);
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
@@ -264,6 +273,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /** {@inheritdoc} */
     public function offsetUnset($offset) {
+        $this->bean or static::create($this);
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}(null);
@@ -272,11 +282,13 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /** {@inheritdoc} */
     public function count() {
+        $this->bean or static::create($this);
         return count($this->toArray());
     }
 
     /** {@inheritdoc} */
     public function getIterator() {
+        $this->bean or static::create($this);
         return new ArrayIterator($this->toArray());
     }
 
@@ -319,19 +331,6 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     }
 
     ////////////////////////////   Events   ////////////////////////////
-
-    /**
-     * Reset the model with its defaults values
-     * @internal
-     */
-    public function _clear() {
-        if ($meta = $this->getMeta()) {
-            foreach ($meta->properties as $prop) {
-                $this->{$prop} = $meta->defaults->{$prop} ?? null;
-            }
-            $this->id = 0;
-        }
-    }
 
     /**
      * Sync Model with Bean
