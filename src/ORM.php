@@ -11,6 +11,7 @@ use Psr\{
 use RedBeanPHP\{
     Facade, RedException
 };
+use const day;
 use function NGSOFT\Tools\autoloadDir;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
@@ -24,6 +25,7 @@ class ORM extends Facade {
 
     /** var array<string,mixed> */
     protected static $config = [
+        "metacachettl" => day,
         "models" => [],
         "timezone" => "Europe/Paris",
         "connection" => "default",
