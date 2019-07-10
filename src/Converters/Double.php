@@ -7,25 +7,25 @@ use Manju\Interfaces\Converter;
 class Double implements Converter {
 
     /** {@inheritdoc} */
-    public function convertFromBean($value) {
-        $value = $value !== null ? $value : 0;
-        return doubleval($value); ;
+    public static function convertFromBean($value) {
+        if (is_numeric($value)) return doubleval($value);
+        return null;
     }
 
     /** {@inheritdoc} */
-    public function convertToBean($value) {
-        $value = $this->convertFromBean($value);
-        if (!is_nan($value)) return $value;
-        return 0;
+    public static function convertToBean($value) {
+        if (is_double($value) or is_int($value)) return $value;
+        if (is_numeric($value)) return doubleval($value);
+        return null;
     }
 
     /** {@inheritdoc} */
-    public function getTypes(): array {
+    public static function getTypes(): array {
         return ["double", "float"];
     }
 
     /** {@inheritdoc} */
-    public function isValid($value) {
+    public static function isValid($value) {
         return (gettype($value) === "double") or ( gettype($value) === "integer");
     }
 

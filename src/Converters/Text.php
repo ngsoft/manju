@@ -7,22 +7,22 @@ use Manju\Interfaces\Converter;
 class Text implements Converter {
 
     /** {@inheritdoc} */
-    public function convertFromBean($value) {
+    public static function convertFromBean($value) {
         return (string) $value;
     }
 
     /** {@inheritdoc} */
-    public function convertToBean($value) {
+    public static function convertToBean($value) {
         return (string) $value;
     }
 
     /** {@inheritdoc} */
-    public function getTypes(): array {
+    public static function getTypes(): array {
         return ["string", "text"];
     }
 
     /** {@inheritdoc} */
-    public function isValid($value) {
+    public static function isValid($value) {
         return gettype($value) === "string";
     }
 

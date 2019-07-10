@@ -151,18 +151,17 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Store current Entry into the database
      * @return int|null
      */
-    public function store(): ?int {
+    public function save(): ?int {
         if (!($this->bean)) BeanHelper::dispenseFor($this);
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
-            return (int) ORM::store($this->bean);
             try {
-
+                $id = (int) ORM::store($this->bean);
             } catch (\Throwable $exc) {
                 echo $exc->getCode();
             }
         }
-        return null;
+        return $id ?? null;
     }
 
 ////////////////////////////   MetaDatas   ////////////////////////////
@@ -222,7 +221,8 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     public function offsetGet($offset) {
         $getter = $this->getGetterMethod($offset);
         if (method_exists($this, $getter)) {
-            return $this->{$getter}();
+            $value = &$this->{$getter}();
+            return $value;
         }
         throw new InvalidProperty("Invalid Property $offset");
     }
@@ -261,8 +261,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     ////////////////////////////   __magic_methods   ////////////////////////////
 
     /** {@inheritdoc} */
-    public function __get($prop) {
-        return $this->offsetGet($prop);
+    public function &__get($prop) {
+        $value = &$this->offsetGet($prop);
+        return $value;
     }
 
     /** {@inheritdoc} */

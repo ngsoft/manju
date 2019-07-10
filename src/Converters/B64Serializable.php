@@ -2,31 +2,32 @@
 
 namespace Manju\Converters;
 
-use InvalidArgumentException;
-use Manju\Interfaces\Converter;
-use Serializable;
+use InvalidArgumentException,
+    Manju\Interfaces\Converter,
+    Serializable;
+use function mb_strlen;
 
 class B64Serializable implements Converter {
 
     /** {@inheritdoc} */
-    public function convertFromBean($value) {
-        if (is_string($value) and mb_strlen($value) > 0) return $this->b64unserialize($value);
+    public static function convertFromBean($value) {
+        if (is_string($value) and mb_strlen($value) > 0) return self::b64unserialize($value);
         return null;
     }
 
     /** {@inheritdoc} */
-    public function convertToBean($value) {
-        if (is_array($value) or $value instanceof Serializable) return $this->b64serialize($value);
+    public static function convertToBean($value) {
+        if (is_array($value) or $value instanceof Serializable) return self::b64serialize($value);
         return "";
     }
 
     /** {@inheritdoc} */
-    public function getTypes(): array {
+    public static function getTypes(): array {
         return ["object", "array"];
     }
 
     /** {@inheritdoc} */
-    public function isValid($value) {
+    public static function isValid($value) {
         return is_array($value) or $value instanceof Serializable;
     }
 
@@ -35,13 +36,11 @@ class B64Serializable implements Converter {
      * @param array|Serializable $value
      * @return string
      */
-    public function b64serialize($value): string {
+    public static function b64serialize($value): string {
         if (!is_array($value) && !($value instanceof Serializable)) {
             throw new InvalidArgumentException("Cannot serialize value not Serializable");
         }
-        $str = serialize($value);
-        $result = base64_encode($str);
-        return $result;
+        return base64_encode(serialize($value));
     }
 
     /**
@@ -49,10 +48,13 @@ class B64Serializable implements Converter {
      * @param string $value
      * @return array|Serializable|null
      */
-    public function b64unserialize(string $value) {
-        $str = base64_decode($value);
-        $obj = unserialize($str);
-        return $obj;
+    public static function b64unserialize(string $value) {
+
+        return (
+                (mb_strlen($value) > 0)
+                and ( $serialized = base64_decode($value, true))
+                and ( $obj = @unserialize($serialized))
+                ) ? $obj : null;
     }
 
 }

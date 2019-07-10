@@ -2,21 +2,25 @@
 
 namespace Manju\Converters;
 
-class Boolean implements \Manju\Interfaces\Converter {
+use Manju\Interfaces\Converter;
 
-    public function convertFromBean($value) {
-        return (int) $value === 1;
+class Boolean implements Converter {
+
+    public static function convertFromBean($value) {
+        if (is_string($value)) return $value === "true";
+        elseif (is_numeric($value)) return 1 === (int) $value;
+        else return $value === true;
     }
 
-    public function convertToBean($value) {
-        return $value === true ? 1 : 0;
+    public static function convertToBean($value) {
+        return $value === true ? "true" : "false";
     }
 
-    public function getTypes(): array {
+    public static function getTypes(): array {
         return ["bool", "boolean"];
     }
 
-    public function isValid($value) {
+    public static function isValid($value) {
         return gettype($value) === "boolean";
     }
 
