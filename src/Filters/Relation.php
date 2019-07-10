@@ -66,10 +66,10 @@ class Relation extends AnnotationFilterAbstract {
      */
     private function getExpandedModelClass(string $target): string {
 
-        $norm = preg_replace("/^(?:.*[\\\])?(\w+)$/", '$1', strtolower($target));
+        $norm = preg_replace('/^(?:.*[\\\])?(\w+)$/', '$1', strtolower($target));
         //var_dump($norm); exit;
         foreach (findClassesImplementing(Model::class) as $model) {
-            $mnorm = preg_replace("/^(?:.*[\\\])?(\w+)$/", '$1', strtolower($model));
+            $mnorm = preg_replace('/^(?:.*[\\\])?(\w+)$/', '$1', strtolower($model));
             if ($norm === $mnorm) return $model;
         }
         // logs error if logger registered
