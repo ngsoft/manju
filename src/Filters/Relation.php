@@ -2,8 +2,13 @@
 
 namespace Manju\Filters;
 
-use Manju\Helpers\AnnotationFilterAbstract,
-    NGSOFT\Tools\Reflection\Annotation;
+use Manju\{
+    Helpers\AnnotationFilterAbstract, ORM\Model
+};
+use NGSOFT\Tools\Reflection\{
+    Annotation, Parser
+};
+use function NGSOFT\Tools\findClassesImplementing;
 
 class Relation extends AnnotationFilterAbstract {
 
@@ -33,16 +38,42 @@ class Relation extends AnnotationFilterAbstract {
                     $relation["target"] = $value;
                 } elseif (is_string($param)) $relation[$param] = $value;
             }
-            if (isset($relation["target"])) {
-                $prop = $annotation->attributeName;
-                if (($index = array_search($prop, $meta["properties"])) !== false) {
-                    unset($meta["properties"][$index]);
-                    unset($meta["converters"][$prop]);
-                    ksort($meta["properties"]);
+            try {
+                if (
+                        isset($relation["target"])
+                        and ( $relation["target"] = $this->getExpandedModelClass($relation["target"]) )
+                ) {
+
+                    $prop = $annotation->attributeName;
+                    if (($index = array_search($prop, $meta["properties"])) !== false) {
+                        unset($meta["properties"][$index]);
+                        unset($meta["converters"][$prop]);
+                        ksort($meta["properties"]);
+                    }
+                    $meta["relations"][$prop] = $relation;
                 }
-                $meta["relations"][$prop] = $relation;
+            } catch (Exception $exc) {
+                $exc->getCode();
             }
         }
+    }
+
+    /**
+     * Finds Model corresponding to the relation
+     * @param string $target
+     * @throws ManjuException
+     * @return string
+     */
+    private function getExpandedModelClass(string $target): string {
+
+        $norm = preg_replace("/^(?:.*[\\\])?(\w+)$/", '$1', strtolower($target));
+        //var_dump($norm); exit;
+        foreach (findClassesImplementing(Model::class) as $model) {
+            $mnorm = preg_replace("/^(?:.*[\\\])?(\w+)$/", '$1', strtolower($model));
+            if ($norm === $mnorm) return $model;
+        }
+        // logs error if logger registered
+        throw new ManjuException("Cannot find Model Class For Relation with target $target");
     }
 
 }

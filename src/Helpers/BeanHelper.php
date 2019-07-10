@@ -41,15 +41,15 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     public static $filters = [];
 
     /** @var Model|null */
-    protected $for;
+    protected static $for;
 
     /** {@inheritdoc} */
     public function getModelForBean(OODBBean $bean) {
         $type = $bean->getMeta('type');
         try {
-            if ($this->for instanceof Model) {
-                $model = $this->for;
-                $this->for = null;
+            if (self::$for instanceof Model) {
+                $model = self::$for;
+                self::$for = null;
             } elseif (isset(self::$models[$type])) {
                 $class = self::$models[$type];
                 $model = new $class();
@@ -57,7 +57,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             $model->loadBean($bean);
             return $model;
         } catch (Throwable $exc) {
-            $this->log($exc->getMessage());
+            $exc->getCode();
         }
         return parent::getModelForBean($bean);
     }
@@ -67,9 +67,10 @@ class BeanHelper extends SimpleFacadeBeanHelper {
      * @param Model $model
      * @param int|null $id
      */
-    public function dispenseFor(Model $model, int $id = null) {
+    public static function dispenseFor(Model $model, int $id = null) {
+
         if (($type = $model->getMeta("type"))) {
-            $this->for = $model;
+            self::$for = $model;
             if (is_int($id)) ORM::load($type, $id);
             else ORM::dispense($type);
         }

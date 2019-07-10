@@ -6,7 +6,7 @@ use ArrayIterator,
     DateTime,
     JsonSerializable;
 use Manju\{
-    Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper
+    Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, ORM
 };
 use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
@@ -32,12 +32,12 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     protected $id;
 
     /**
-     * @var DateTime
+     * @var DateTime|null
      */
     protected $created_at = null;
 
     /**
-     * @var DateTime
+     * @var DateTime|null
      */
     protected $updated_at = null;
 
@@ -65,17 +65,100 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->updated_at;
     }
 
-    ////////////////////////////   Methods To Override   ////////////////////////////
+    ////////////////////////////   SQL Helpers   ////////////////////////////
 
     /**
-     * Method used to validate the model
-     * @param string $prop
-     * @param mixed $value
-     * @return bool
+     * Finds entries using an optional SQL statement
+     * @param string|null $sql SQL query to find the desired bean, starting right after WHERE clause
+     * @param array $bindings array of values to be bound to parameters in query
+     * @return array<static>
      */
-    //protected function validateModel(string $prop, $value): bool {
-    //    return true;
-    //}
+    public static function find(string $sql = null, array $bindings = []): array {
+        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+            return array_map(function ($bean) {
+                return $bean->box();
+            }, ORM::find($type, $sql, $bindings));
+        }
+        return [];
+    }
+
+    /**
+     * Returns the first entry
+     * @param string $sql SQL query to find the desired entry, starting right after WHERE clause
+     * @param array $bindings array of values to be bound to parameters in query
+     * @return static|null
+     */
+    public static function findOne(string $sql = null, array $bindings = []) {
+        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+            if ($result = ORM::findOne($type, $sql, $bindings)) return $result->box();
+        }
+        return null;
+    }
+
+    /**
+     * Count the number of entries of current Model
+     * @param string $sql additional SQL snippe
+     * @param array $bindings parameters to bind to SQL
+     * @return int
+     */
+    public static function countEntries(string $sql = "", array $bindings = []): int {
+        if (($type = BeanHelper::$metadatas[static::class]["type"] ?? null)) {
+            return ORM::count($type, $sql, $bindings);
+        }
+        return 0;
+    }
+
+    ////////////////////////////   CRUD   ////////////////////////////
+
+    /**
+     * Loads a bean with the data corresponding to the id
+     *
+     * @param int|null $id if not set it will just create an empty Model
+     * @return static Instance of Model
+     */
+    public static function load(int $id = null) {
+        $i = new static();
+        BeanHelper::dispenseFor($i, $id);
+        return $i;
+    }
+
+    /**
+     * Remove Entry from the database
+     * @return void
+     */
+    public function trash(): void {
+        if ($this->bean instanceof OODBBean) {
+            ORM::trash($this->bean);
+        }
+    }
+
+    /**
+     * Reloads Data for current Entry from the database
+     * @return static New instance with fresh data
+     */
+    public function fresh() {
+        if (
+                ($this->bean instanceof OODBBean)
+                and $this->bean->id > 0
+        ) {
+            return ORM::load($this->getMeta("type"), $this->bean->id)->box();
+        }
+        return $this;
+    }
+
+    /**
+     * Store current Entry into the database
+     * @return int|null
+     */
+    public function store(): ?int {
+
+        if ($this->bean instanceof OODBBean) {
+            $this->bean->setMeta("tainted", true);
+            return (int) ORM::store($this->bean);
+        }
+        return null;
+    }
+
     ////////////////////////////   MetaDatas   ////////////////////////////
 
     /**
@@ -206,7 +289,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Reset the model with its defaults values
      * @internal
      */
-    private function _clear() {
+    public function _clear() {
         if ($meta = $this->getMeta()) {
             foreach ($meta["properties"] as $prop) {
                 $this->{$prop} = $meta["defaults"]["prop"] ?? null;
@@ -220,7 +303,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Sync Model with Bean
      * @internal
      */
-    private function _reload() {
+    public function _reload() {
         $this->_clear();
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
@@ -239,7 +322,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @suppress PhanUndeclaredMethod
      * @throws ValidationError Prevents Redbeans from Writing wrong datas
      */
-    private function _validate() {
+    public function _validate() {
         if ($meta = $this->getMeta()) {
             foreach ($meta["required"] as $prop) {
                 if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
@@ -267,7 +350,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * Write datas to bean
      * @internal
      */
-    private function _update() {
+    public function _update() {
         if ($meta = $this->getMeta()) {
             if ($meta["timestamps"] === true) {
                 $now = time();
