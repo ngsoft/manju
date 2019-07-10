@@ -3,11 +3,9 @@
 namespace Manju\Filters;
 
 use Manju\{
-    Helpers\AnnotationFilterAbstract, ORM\Model
+    Exceptions\ManjuException, Helpers\AnnotationFilterAbstract, ORM\Model
 };
-use NGSOFT\Tools\Reflection\{
-    Annotation, Parser
-};
+use NGSOFT\Tools\Reflection\Annotation;
 use function NGSOFT\Tools\findClassesImplementing;
 
 class Relation extends AnnotationFilterAbstract {
@@ -52,7 +50,7 @@ class Relation extends AnnotationFilterAbstract {
                     }
                     $meta["relations"][$prop] = $relation;
                 }
-            } catch (Exception $exc) {
+            } catch (ManjuException $exc) {
                 $exc->getCode();
             }
         }
