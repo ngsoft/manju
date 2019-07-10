@@ -152,7 +152,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return int|null
      */
     public function store(): ?int {
-
+        if (!($this->bean)) BeanHelper::dispenseFor($this);
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
             return (int) ORM::store($this->bean);
@@ -229,7 +229,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return string
      */
     private function getSetterMethod(string $prop): string {
-        return sprintf("get%s", toCamelCase($prop));
+        return sprintf("set%s", toCamelCase($prop));
     }
 
     /**
@@ -263,6 +263,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     /** {@inheritdoc} */
     public function offsetSet($offset, $value) {
         $setter = $this->getSetterMethod($offset);
+        var_dump($setter);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
         } else throw new InvalidProperty("Invalid Property $offset");

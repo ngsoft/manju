@@ -19,7 +19,7 @@ class Bean extends OODBBean {
     }
 
     public function dispense() {
-        ($model = $this->getModel()) and $model->_reload();
+        // ($model = $this->getModel()) and $model->_reload();
     }
 
     public function open() {
