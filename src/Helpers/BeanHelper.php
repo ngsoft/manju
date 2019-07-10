@@ -118,10 +118,9 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         $converters = &self::$converters;
         if (empty($converters)) {
             foreach (findClassesImplementing(Converter::class) as $class) {
-                $conv = new $class();
-                $converters[$class] = $conv;
-                foreach ($conv->getTypes() as $keyword) {
-                    $converters[$keyword] = $conv;
+                $converters[$class] = $class;
+                foreach ($class::getTypes() as $keyword) {
+                    $converters[$keyword] = $class;
                 }
             }
         }
@@ -214,9 +213,9 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                         and in_array($annotation->attributeName, $meta["properties"])
                 ) {
                     if (is_string($annotation->value)) {
-                        $value = preg_replace('/^([a-zA-Z]+).*?$/', "$1", $annotation->value);
+                        $value = preg_replace('/^[\\\]?([a-zA-Z]+).*?$/', "$1", $annotation->value);
                         if (isset($converters[$value])) {
-                            $meta["converters"][$annotation->attributeName] = get_class($converters[$value]);
+                            $meta["converters"][$annotation->attributeName] = $converters[$value];
                         }
                     }
                 }
@@ -226,18 +225,17 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             }
         }
 
-
-        //add id
-        $meta["properties"][] = "id";
-        $meta["converters"]["id"] = Number::class;
-        //add timestamps
-        if ($meta["timestamps"] === true) {
-            $meta["properties"] = array_merge($meta["properties"], ["created_at", "updated_at"]);
-            $meta["converters"] = array_merge($meta["converters"], [
-                "created_at" => Date::class,
-                "updated_at" => Date::class
-            ]);
+        if (isset($meta["ignore"])) {
+            foreach ($meta["ignore"] as $key) {
+                unset($meta["converters"][$key], $meta["defaults"][$key]);
+                foreach (["properties", "required", "unique"] as $metakey) {
+                    $meta[$metakey] = array_filter($meta[$metakey], function ($val) use($key) { return $key !== $val; });
+                }
+            }
+            unset($meta["ignore"]);
         }
+
+
 
         self::$metadatas[get_class($model)] = $meta;
         //save cache (if any)
