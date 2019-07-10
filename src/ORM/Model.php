@@ -192,16 +192,16 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 $type = strtolower($relation["type"]);
                 switch ($type) {
                     case "onetomany":
-                        $key = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        $skey = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
                     case "manytomany":
-                        $key = $key ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        $skey = $skey ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
                         if ($via = $relation["via"] ?? null) $b = $b->via($via);
-                        $value = array_merge([], $b->{$key});
-                        $value = array_map(function ($bean) { return $bean->box; }, $value);
+                        $value = array_merge([], $b->{$skey});
+                        $value = array_map(function ($bean) { return $bean->box(); }, $value);
                         break;
                     case "manytoone":
-                        $key = BeanHelper::$metadatas[$relation["target"]]["type"];
-                        $value = $b->{$key};
+                        $skey = BeanHelper::$metadatas[$relation["target"]]["type"];
+                        $value = $b->{$skey};
                         break;
                 }
                 $this->{$key} = $value;
@@ -407,19 +407,19 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
             //relations
             $b = $this->bean;
             foreach ($meta["relations"] as $key => $relation) {
+                if (!isset($this->{$key})) continue;
                 $type = strtolower($relation["type"]);
                 switch ($type) {
                     case "onetomany":
-                        $key = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        $skey = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
                     case "manytomany":
-                        $key = $key ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
+                        $skey = $skey ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
                         if ($via = $relation["via"] ?? null) $b = $b->via($via);
-                        $value = array_merge([], $b->{$key});
-                        $value = array_map(function ($bean) { return $bean->box; }, $value);
+                        $b->{$skey} = array_map(function ($model) { return $model->unbox(); }, $this->{$key});
                         break;
                     case "manytoone":
-                        $key = BeanHelper::$metadatas[$relation["target"]]["type"];
-                        $value = $b->{$key};
+                        $skey = BeanHelper::$metadatas[$relation["target"]]["type"];
+                        $b->{$skey} = $this->{$key};
                         break;
                 }
             }
