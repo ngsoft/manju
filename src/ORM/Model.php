@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\ORM;
 
 use ArrayIterator,
@@ -168,16 +170,17 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Store current Entry into the database
+     * @param bool|null $throws_validation_error
      * @return int|null
      */
-    public function save(): ?int {
+    public function save(bool $throws_validation_error = null): ?int {
         if (!($this->bean)) BeanHelper::dispenseFor($this);
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
             try {
                 $id = (int) ORM::store($this->bean);
             } catch (Throwable $exc) {
-                echo $exc->getCode();
+                if ($throws_validation_error === true) throw $exc;
             }
         }
         return $id ?? null;
@@ -258,9 +261,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $this->bean or static::create($this);
         $getter = $this->getGetterMethod($offset);
         if (method_exists($this, $getter)) {
-            $value = &$this->{$getter}();
+            $value = $this->{$getter}();
             return $value;
-        } else throw new InvalidProperty("Invalid Property " . get_class($this) . "::$" . $offset);
+        } else throw new InvalidProperty("Cannot access property " . get_class($this) . "::$" . $offset . ": No getter set.");
     }
 
     /** {@inheritdoc} */
@@ -269,7 +272,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
-        } else throw new InvalidProperty("Invalid Property " . get_class($this) . "::$" . $offset);
+        } else throw new InvalidProperty("Cannot access property " . get_class($this) . "::$" . $offset . ": No setter set.");
     }
 
     /** {@inheritdoc} */
@@ -302,7 +305,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /** {@inheritdoc} */
     public function &__get($prop) {
-        $value = &$this->offsetGet($prop);
+        $value = $this->offsetGet($prop);
         return $value;
     }
 
@@ -340,7 +343,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     public function _load() {
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
-
+            $this->id = &$b->id;
             foreach ($meta->converters as $prop => $converter) {
                 $value = $b->{$prop};
                 if ($value !== null) $this->{$prop} = $converter::convertFromBean($value);

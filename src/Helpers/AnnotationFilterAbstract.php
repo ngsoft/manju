@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\Helpers;
 
 use Manju\Interfaces\AnnotationFilter;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\Helpers;
 
 use Manju\{
@@ -181,6 +183,12 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             ) {
                 $meta["properties"][] = $prop->name;
                 $meta["converters"][$prop->name] = Text::class;
+
+                // if typed default value
+                $prop->setAccessible(true);
+                $val = $prop->getValue($model);
+                $type = gettype($val);
+                if (isset(self::$converters[$type])) $meta["converters"][$prop->name] = self::$converters[$type];
             }
         }
 

@@ -12,7 +12,8 @@
     "require-dev": {
         "phan/phan": "*",
         "psr/log": "*",
-        "psr/cache": "*"
+        "psr/cache": "*",
+        "wixel/gump": "^1.5"
     },
     "require": {
         "php": ">=7.1",
