@@ -161,8 +161,6 @@ class BeanHelper extends SimpleFacadeBeanHelper {
             "unique" => [],
             //not null values
             "required" => [],
-            //relations
-            "relations" => [],
             //enables created_at and updated_at
             "timestamps" => false
         ];

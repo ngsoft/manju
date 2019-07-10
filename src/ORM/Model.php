@@ -156,6 +156,11 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
             return (int) ORM::store($this->bean);
+            try {
+
+            } catch (\Throwable $exc) {
+                echo $exc->getCode();
+            }
         }
         return null;
     }
@@ -172,44 +177,6 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $meta = BeanHelper::$metadatas[get_class($this)];
         if ($key === null) return $meta;
         return $meta[$key] ?? null;
-    }
-
-////////////////////////////   Relations   ////////////////////////////
-
-    /**
-     * Loads Relation Mapper on demand
-     * you need to run that before accessing a relation key
-     * @return $this
-     */
-    public function loadRelations() {
-
-        if (
-                ($meta = $this->getMeta())
-                and $this->bean instanceof OODBBean
-        ) {
-            foreach ($meta["relations"] as $key => $relation) {
-                $b = $this->bean; $value = null;
-                $type = strtolower($relation["type"]);
-                switch ($type) {
-                    case "onetomany":
-                        $skey = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
-                    case "manytomany":
-                        $skey = $skey ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
-                        if ($via = $relation["via"] ?? null) $b = $b->via($via);
-                        $value = array_merge([], $b->{$skey});
-                        $value = array_map(function ($bean) { return $bean->box(); }, $value);
-                        break;
-                    case "manytoone":
-                        $skey = BeanHelper::$metadatas[$relation["target"]]["type"];
-                        $value = $b->{$skey};
-                        break;
-                }
-                $this->{$key} = $value;
-            }
-        }
-
-
-        return $this;
     }
 
     ////////////////////////////   ArrayAccess   ////////////////////////////
@@ -263,7 +230,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     /** {@inheritdoc} */
     public function offsetSet($offset, $value) {
         $setter = $this->getSetterMethod($offset);
-        var_dump($setter);
+
         if (method_exists($this, $setter)) {
             $this->{$setter}($value);
         } else throw new InvalidProperty("Invalid Property $offset");
@@ -335,9 +302,6 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 $this->{$prop} = $meta["defaults"]["prop"] ?? null;
             }
             $this->id = 0;
-            foreach (array_keys($meta["relations"]) as $key) {
-                $this->{$key} = null;
-            }
         }
     }
 
@@ -349,7 +313,8 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         //$this->_clear();
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
-            foreach ($meta["converters"] as $converter => $prop) {
+            foreach ($meta["converters"] as $prop => $converter) {
+                $converter = BeanHelper::$converters[$converter];
                 $value = $b->{$prop};
                 if ($value !== null) $this->{$prop} = $converter->convertFromBean($value);
             }
@@ -368,7 +333,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
             foreach ($meta["required"] as $prop) {
                 if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
             }
-            foreach ($meta["converter"] as $prop => $converter) {
+            foreach ($meta["converters"] as $prop => $converter) {
+                if (in_array($prop, ["id", "created_at", "updated_at"])) continue;
+                $converter = BeanHelper::$converters[$converter];
                 if (!$converter->isValid($this->{$prop})) {
                     throw new ValidationError(
                             get_class($this) . '::$' . $prop . " Invalid Type " .
@@ -396,33 +363,15 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
             if ($meta["timestamps"] === true) {
                 $now = time();
                 if ($this->created_at === null) {
-                    $this->created_at = $meta["converters"]["created_at"]->convertFromBean($now);
+                    $this->created_at = BeanHelper::$converters[\Manju\Converters\Date::class]->convertFromBean($now);
                 }
-                $this->updated_at = $meta["converters"]["updated_at"]->convertFromBean($now);
+                $this->updated_at = BeanHelper::$converters[\Manju\Converters\Date::class]->convertFromBean($now);
             }
             foreach ($meta["converters"] as $prop => $converter) {
+                $converter = BeanHelper::$converters[$converter];
                 if ($prop === "id") continue;
                 $value = $converter->convertToBean($this->{$prop});
                 $this->bean->{$prop} = $value;
-            }
-            //relations
-            $b = $this->bean;
-            foreach ($meta["relations"] as $key => $relation) {
-                if (!isset($this->{$key})) continue;
-                $type = strtolower($relation["type"]);
-                switch ($type) {
-                    case "onetomany":
-                        $skey = sprintf('xown%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
-                    case "manytomany":
-                        $skey = $skey ?? sprintf('shared%sList', ucfirst(BeanHelper::$metadatas[$relation["target"]]["type"]));
-                        if ($via = $relation["via"] ?? null) $b = $b->via($via);
-                        $b->{$skey} = array_map(function ($model) { return $model->unbox(); }, $this->{$key});
-                        break;
-                    case "manytoone":
-                        $skey = BeanHelper::$metadatas[$relation["target"]]["type"];
-                        $b->{$skey} = $this->{$key};
-                        break;
-                }
             }
         }
     }
