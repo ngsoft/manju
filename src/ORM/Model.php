@@ -223,6 +223,25 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     }
 
     /**
+     * Get many to many related Collection
+     * @param Model|string $model Related Model
+     * @return Set|null
+     */
+    public function getSharedList($model) {
+        $this->bean or static::create($this);
+        if (
+                ($type = $this->getModelType($model))
+                and $type !== $this->getMeta($type)
+        ) {
+
+            $key = sprintf("shared%sList", ucfirst($type));
+            $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
+            return new Set($this, $relatedClass, $key);
+        }
+        return null;
+    }
+
+    /**
      * Get one to many related Collection
      * @param Model|string $model Related Model
      * @return Set|null
@@ -234,7 +253,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 and $type !== $this->getMeta($type)
         ) {
 
-            $key = sprintf("xown%s", ucfirst($type));
+            $key = sprintf("xown%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
             return new Set($this, $relatedClass, $key);
         }
@@ -242,9 +261,9 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     }
 
     /**
-     *
+     * Get Many to one related Model
      * @param Model|string $model
-     * @return Model
+     * @return Model|null
      */
     public function getListOwner($model) {
         $this->bean or static::create($this);
@@ -259,7 +278,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     }
 
     /**
-     *
+     * Set Many to one related Model
      * @param Model$model
      * @return static
      */
