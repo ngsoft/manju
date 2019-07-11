@@ -111,6 +111,18 @@ class Set implements \IteratorAggregate, \Countable {
     }
 
     /**
+     * Foreach Loop
+     * @param callable $callback
+     * @return static
+     */
+    public function each(callable $callback) {
+        foreach ($this->list as $model) {
+            $callback($model);
+        }
+        return $this;
+    }
+
+    /**
      * Tests whether all elements in the set pass the test implemented by the provided function
      * @param callable $callback
      * @return bool

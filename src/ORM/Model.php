@@ -83,7 +83,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @param array $bindings array of values to be bound to parameters in query
      * @return array<static>
      */
-    public static function find(string $sql = null, array $bindings = []): array {
+    public static function find(string $sql = null, array $bindings = []) {
         if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
             return array_map(function (OODBBean $bean) {
                 return $bean->box();
