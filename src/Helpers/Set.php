@@ -17,7 +17,7 @@ use function NGSOFT\Tools\{
  * Collection Object for related beans based on doctrine/collection
  * @property-read int $length
  */
-class Set {
+class Set implements \IteratorAggregate, \Countable {
 
     /** @var array<Model> */
     private $list = [];
@@ -266,6 +266,17 @@ class Set {
     /** {@inheritdoc} */
     public function __unset($p) {
         noop($p);
+    }
+
+    ////////////////////////////   Iterator   ////////////////////////////
+
+
+    public function count() {
+        return $this->getLength();
+    }
+
+    public function getIterator() {
+        return new \ArrayIterator($this->list);
     }
 
 }

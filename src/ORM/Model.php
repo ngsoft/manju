@@ -291,7 +291,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
             $this->bean->{$type} = $model->unbox();
         }
-        return this;
+        return $this;
     }
 
     ////////////////////////////   ArrayAccess   ////////////////////////////
