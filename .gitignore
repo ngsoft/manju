@@ -1,5 +1,8 @@
 /nbproject/
 /composer.lock
 /trash/
+/vendor/
 *.cmd
 *.sh
+.*
+*.bak

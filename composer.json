@@ -11,12 +11,6 @@
             "homepage": "https://github.com/ngsoft"
         }
     ],
-    "repositories": [
-        {
-                "type": "vcs",
-                "url": "https://github.com/ngsoft/manju"
-        }
-    ],
     "require": {
         "php": "^5.6|>=7.0",
         "gabordemooij/redbean": "^4.3",
