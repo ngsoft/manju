@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Manju\Converters;
 
-use DateTime;
-use Manju\{
-    Exceptions\ManjuException, Interfaces\Converter
-};
+use DateTime,
+    Manju\Interfaces\Converter;
 
 class Date implements Converter {
 

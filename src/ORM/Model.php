@@ -8,7 +8,7 @@ use ArrayIterator,
     DateTime,
     JsonSerializable;
 use Manju\{
-    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, ORM
+    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Set, ORM
 };
 use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
@@ -18,6 +18,7 @@ use Throwable;
 use function NGSOFT\Tools\toCamelCase;
 
 /**
+ *
  * @property-read int $id
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
@@ -55,7 +56,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @return int
      */
     public function getId(): int {
-        return $this->id;
+        return intval($this->id);
     }
 
     /**
@@ -68,7 +69,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Get Last Update Date
-     * @return DateTime|null
+     * @return DateTime
      */
     public function getUpdatedAt(): DateTime {
         return $this->updated_at ?? new DateTime();
@@ -84,7 +85,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public static function find(string $sql = null, array $bindings = []): array {
         if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            return array_map(function ($bean) {
+            return array_map(function (OODBBean $bean) {
                 return $bean->box();
             }, ORM::find($type, $sql, $bindings));
         }
@@ -97,7 +98,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      * @param array $bindings array of values to be bound to parameters in query
      * @return static|null
      */
-    public static function findOne(string $sql = null, array $bindings = []) {
+    public static function findOne(string $sql = "", array $bindings = []) {
         if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
             if ($result = ORM::findOne($type, $sql, $bindings)) return $result->box();
         }
@@ -133,7 +134,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Creates A new Model instance
-     * @param Model|bull $model Description
+     * @param Model|null $model Description
      * @return static
      */
     public static function create(Model $model = null) {
@@ -175,6 +176,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public function save(bool $throws_validation_error = null): ?int {
         if (!($this->bean)) BeanHelper::dispenseFor($this);
+        $id = null;
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
             try {
@@ -183,7 +185,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
                 if ($throws_validation_error === true) throw $exc;
             }
         }
-        return $id ?? null;
+        return $id;
     }
 
     ////////////////////////////   MetaDatas   ////////////////////////////
@@ -198,6 +200,79 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         $meta = BeanHelper::$metadatas[get_class($this)];
         if ($key === null) return $meta;
         return $meta->{$key} ?? null;
+    }
+
+    ////////////////////////////   Basic Relations   ////////////////////////////
+
+    /**
+     * Defines Model Bean Type
+     * @param Model|string $model
+     * @return string|null
+     */
+    private function getModelType($model) {
+        if ($model instanceof Model) {
+
+            return $model->getMeta("type");
+        } elseif (
+                is_string($model) and class_exists($model)
+                and in_array(self::class, class_parents($model))
+        ) {
+            return BeanHelper::$metadatas[$model]->type;
+        }
+        return null;
+    }
+
+    /**
+     * Get one to many related Collection
+     * @param Model|string $model Related Model
+     * @return Set|null
+     */
+    public function getOwnedList($model) {
+        $this->bean or static::create($this);
+        if (
+                ($type = $this->getModelType($model))
+                and $type !== $this->getMeta($type)
+        ) {
+
+            $key = sprintf("xown%s", ucfirst($type));
+            $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
+            return new Set($this, $relatedClass, $key);
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param Model|string $model
+     * @return Model
+     */
+    public function getListOwner($model) {
+        $this->bean or static::create($this);
+        if (
+                ($type = $this->getModelType($model))
+                and $type !== $this->getMeta($type)
+        ) {
+
+            if ($this->bean->exists($type)) return $this->bean->{$type}->box();
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param Model$model
+     * @return static
+     */
+    public function setListOwner(Model $model) {
+        $this->bean or static::create($this);
+        if (
+                ($type = $this->getModelType($model))
+                and $type !== $this->getMeta($type)
+        ) {
+
+            $this->bean->{$type} = $model->unbox();
+        }
+        return this;
     }
 
     ////////////////////////////   ArrayAccess   ////////////////////////////
@@ -227,7 +302,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
     public function toArray(): array {
         $this->bean or static::create($this);
         $array = [];
-        $props = array_merge(["id"], $$this->getMeta("properties"));
+        $props = array_merge(["id"], $this->getMeta("properties"));
         if ($this->getMeta("timestamps")) $props = array_merge($props, ["created_at", "updated_at"]);
         foreach ($props as $key) {
             $getter = $this->getGetterMethod($key);
@@ -319,9 +394,16 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
         return $this->offsetExists($key);
     }
 
-    /** {@inheritdoc} */
+    /**
+     * @suppress PhanAccessReadOnlyMagicProperty
+     * {@inheritdoc}
+     */
     public function __clone() {
-        if ($this->bean instanceof OODBBean) $this->bean = clone $this->bean;
+        if ($this->bean instanceof OODBBean) {
+            $this->bean = clone $this->bean;
+            $this->bean->setMeta("model", $this);
+            $this->id = &$this->bean->id;
+        }
     }
 
     /** {@inheritdoc} */
@@ -338,6 +420,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Sync Model with Bean
+     * @suppress PhanAccessReadOnlyMagicProperty
      * @internal
      */
     public function _load() {
@@ -361,6 +444,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Validate Model Datas
+     * @suppress PhanAccessReadOnlyMagicProperty
      * @internal
      * @suppress PhanUndeclaredMethod
      * @throws ValidationError Prevents Redbeans from Writing wrong datas
@@ -392,6 +476,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
 
     /**
      * Write datas to bean
+     * @suppress PhanAccessReadOnlyMagicProperty
      * @internal
      */
     public function _update() {

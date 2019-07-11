@@ -24,7 +24,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var array<string,string> */
     protected static $models = [];
 
-    /** @var array<string,array> */
+    /** @var array<string,\stdClass> */
     public static $metadatas = [];
 
     /** @var array<string,Converter> */
@@ -73,8 +73,8 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     /**
-     * @param array<Model> $models
-     * @param int $metacachettl
+     * @param array<string> $models
+     * @param int|null $metacachettl
      * @throws ManjuException
      */
     public function __construct(array $models, int $metacachettl = null) {
@@ -233,7 +233,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         //save cache (if any)
-        if ($pool instanceof CacheItemPoolInterface) {
+        if ($pool instanceof CacheItemPoolInterface and isset($item)) {
             $item->set($meta);
             $item->expiresAfter(self::$metacachettl);
             $pool->save($item);
