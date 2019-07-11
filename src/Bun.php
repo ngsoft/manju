@@ -2,10 +2,24 @@
 
 namespace Manju;
 
-use RedBeanPHP\SimpleModel;
-use RedBeanPHP\OODBBean;
-use RedBeanPHP\Facade as R;
-use Psr\Log\LoggerInterface;
+use ArrayAccess,
+    ArrayIterator,
+    Countable,
+    DateTime,
+    InvalidArgumentException,
+    IteratorAggregate,
+    JsonSerializable,
+    Psr\Log\LoggerInterface,
+    RedBeanPHP\Facade,
+    RedBeanPHP\Facade as R,
+    RedBeanPHP\Logger,
+    RedBeanPHP\OODBBean,
+    RedBeanPHP\SimpleModel,
+    ReflectionClass,
+    Serializable,
+    stdClass;
+use const MANJU_CREATED_COLUMN,
+          MANJU_UPDATED_COLUMN;
 
 /**
  * Constants used
@@ -23,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * @property int $id Bean ID
  *
  */
-abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable, \ArrayAccess, \JsonSerializable {
+abstract class Bun extends SimpleModel implements IteratorAggregate, Countable, ArrayAccess, JsonSerializable {
     //===============       Configurable Properties        ===============//
 
     /**
@@ -51,7 +65,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     //===============       Bun Properties        ===============//
 
-    const VERSION = '1.4';
+    const VERSION = '1.5';
 
     /**
      * Regex to check some values
@@ -70,7 +84,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     /**
      * Logger Aware
      * Set to static for better reusability
-     * @var Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected static $logger;
 
@@ -82,7 +96,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     /**
      * Store the plugins
-     * @var \stdClass
+     * @var stdClass
      */
     private static $plugins;
 
@@ -179,14 +193,14 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
                 case 'get':
                     if (count($args)) {
                         $this->debug("trying to overload getter method " . get_class($this) . "->$method() with an argument.");
-                        throw new \InvalidArgumentException("$method method don't accept arguments.", 0);
+                        throw new InvalidArgumentException("$method method don't accept arguments.", 0);
                     }
                     return $this->$prop;
                 //break;
                 case 'set':
                     if (count($args) != 1) {
                         $this->debug("trying to overload setter method " . get_class($this) . "->$method() with an invalid argument count.");
-                        throw new \InvalidArgumentException("$method method require one argument.");
+                        throw new InvalidArgumentException("$method method require one argument.");
                     } else $this->$prop = $args[0];
             }
             return $this;
@@ -302,11 +316,11 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     /**
      * Access the plugins
-     * @return \stdClass
+     * @return stdClass
      */
     public function plugins() {
         if (!is_object(self::$plugins)) {
-            self::$plugins = new \stdClass();
+            self::$plugins = new stdClass();
         }
         return self::$plugins;
     }
@@ -322,7 +336,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
             return $this;
         }
         if (!$name) {
-            $name = (new \ReflectionClass($instance))->getShortName();
+            $name = (new ReflectionClass($instance))->getShortName();
             $name = strtolower($name);
         }
         $this->plugins()->$name = $instance;
@@ -494,7 +508,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     protected function convertForSet(string $prop, $val) {
 
         //datetime detection
-        if ($val instanceof \DateTime) {
+        if ($val instanceof DateTime) {
             $val = $val->format(DateTime::DB);
             return $val;
         }
@@ -548,7 +562,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if (!$this->tainted) return;
         foreach ($this->properties as $prop => $val) {
             if (!$this->getColumnType($prop)) continue;
-            if ($val instanceof \DateTime) {
+            if ($val instanceof DateTime) {
                 $val = $this->convertForSet($prop, $val);
                 $this->bean->$prop = $val;
                 $this->debug("updating datetime value for $prop in " . get_class($this));
@@ -581,7 +595,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     public function b64serialize($value): string {
         if (is_object($value)) {
-            if (!($value instanceof \Serializable)) {
+            if (!($value instanceof Serializable)) {
                 $this->debug("trying to serialize unserializable objet " . get_class($value) . " in " . get_class($this));
                 $value = '';
                 return $value;
@@ -848,7 +862,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
     /**
      * Get the bean directly
-     * @return RedBeanPHP\OODBBean
+     * @return OODBBean
      */
     public function unbox() {
         $this->bean or $this->create();
@@ -883,7 +897,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      *
      * @param string $sql      sql    SQL query to find the desired bean, starting right after WHERE clause
      * @param array  $bindings values array of values to be bound to parameters in query
-     * @return Manju\Bun|RedbeanPHP\OODBBean
+     * @return Bun|RedbeanPHP\OODBBean
      */
     public function findOne($sql = null, array $bindings = []) {
         count(self::$columns) or $this->initialize(false);
@@ -996,7 +1010,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
      */
     public function beantype() {
         if ($this->beantype) return $this->beantype;
-        if ($class = (new \ReflectionClass($this))->getShortName()) {
+        if ($class = (new ReflectionClass($this))->getShortName()) {
             $type = strtolower($class);
             $cut = explode('_', $type);
             $beantype = array_pop($cut);
@@ -1017,7 +1031,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     private function setBeanlist() {
         self::$beanlist[$this->beantype()] = get_class($this);
 
-        if ($filename = (new \ReflectionClass($this))->getFileName()) {
+        if ($filename = (new ReflectionClass($this))->getFileName()) {
             //scan the dir for class files
             $dir = dirname($filename);
             foreach (scandir($dir) as $file) {
@@ -1042,7 +1056,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
     /**
      * Sets a PSR-3 logger.
      * Can make static call
-     * @param Psr\Log\LoggerInterface $logger
+     * @param LoggerInterface $logger
      */
     public function setLogger(LoggerInterface $logger) {
         self::$logger = $logger;
@@ -1098,13 +1112,13 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
         if (!self::$logger and class_exists("Manju\\Logger")) {
             $this->setLogger(new Logger);
         }
-        if (self::$logger) self::$logger->$level($message, $context);
+        if (self::$logger instanceof LoggerInterface) self::$logger->log($level, $message, $context);
     }
 
     //===============       Interfaces        ===============//
     //IteratorAgregate
     public function getIterator() {
-        return new \ArrayIterator($this->export());
+        return new ArrayIterator($this->export());
     }
 
     //Countable
@@ -1137,7 +1151,7 @@ abstract class Bun extends SimpleModel implements \IteratorAggregate, \Countable
 
         foreach ($data as $prop => $val) {
             if (is_object($val)) {
-                if ($val instanceof \JsonSerializable) $val = $val->jsonSerialize();
+                if ($val instanceof JsonSerializable) $val = $val->jsonSerialize();
                 else {
                     //try to get most values
                     $val = json_decode(json_encode($val), true);
