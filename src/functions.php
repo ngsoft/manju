@@ -34,6 +34,17 @@ function toSnake(string $camelCased): string {
 }
 
 /**
+ * Convert snake_case to SnakeCase
+ * @param string $snake_case
+ * @return string
+ */
+function toCamelCase(string $snake_case): string {
+    return preg_replace_callback('/(^|_|\.)+(.)/', function ($match) {
+        return ('.' === $match[1] ? '_' : '') . strtoupper($match[2]);
+    }, $snake_case);
+}
+
+/**
  * Convert array to object
  * @param array $array
  * @return stdClass|array<stdClass>|null

@@ -15,7 +15,7 @@ use RedBeanPHP\{
 use ReflectionClass,
     SplFileInfo,
     Throwable;
-use function NGSOFT\Tools\{
+use function NGSOFT\Manju\{
     array_to_object, autoloadDir, findClassesImplementing, toSnake
 };
 

@@ -11,6 +11,7 @@ use Psr\{
 use RedBeanPHP\{
     Facade, RedException
 };
+use function NGSOFT\Manju\autoloadDir;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 

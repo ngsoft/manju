@@ -15,7 +15,7 @@ use RedBeanPHP\{
     OODBBean, SimpleModel
 };
 use Throwable;
-use function NGSOFT\Tools\toCamelCase;
+use function NGSOFT\Manju\toCamelCase;
 
 /**
  *
@@ -85,7 +85,7 @@ class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
      */
     public static function find(string $sql = null, array $bindings = []) {
         if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            return array_map(function (OODBBean $bean) {
+            return \array_map(function (OODBBean $bean) {
                 return $bean->box();
             }, ORM::find($type, $sql, $bindings));
         }
