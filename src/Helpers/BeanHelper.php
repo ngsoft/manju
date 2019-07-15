@@ -7,7 +7,7 @@ namespace Manju\Helpers;
 use Manju\{
     Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model
 };
-use NGSOFT\Tools\Reflection\Parser,
+use \NGSOFT\Manju\Reflection\Parser,
     Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, OODBBean, SimpleModel

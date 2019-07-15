@@ -2,14 +2,12 @@
 
 namespace NGSOFT\Manju\Reflection;
 
-use NGSOFT\Tools\Exceptions\Exception,
-    ReflectionClass,
+use ReflectionClass,
     ReflectionClassConstant,
     ReflectionFunction,
     ReflectionMethod,
     ReflectionObject,
-    ReflectionProperty,
-    Throwable;
+    ReflectionProperty;
 use function mb_strlen,
              mb_strpos,
              mb_strrpos,
@@ -180,13 +178,8 @@ class Parser {
             if (count($arr) > 0) {
                 $val = [];
                 foreach ($arr as $k => $v) {
-                    try {
-                        $tmp = json_decode($v, true);
-                        if (json_last_error() !== JSON_ERROR_NONE) throw new Exception();
-                        $v = $tmp;
-                    } catch (Throwable $ex) {
-                        $ex->getCode();
-                    }
+                    $tmp = json_decode($v, true);
+                    if (json_last_error() === JSON_ERROR_NONE) $v = $tmp;
                     $val[$k] = $v;
                 }
             }

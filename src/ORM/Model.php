@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Manju\ORM;
 
-use ArrayIterator,
+use ArrayAccess,
+    ArrayIterator,
+    Countable,
     DateTime,
+    IteratorAggregate,
     JsonSerializable;
 use Manju\{
     Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Set, ORM
 };
-use NGSOFT\Tools\Interfaces\ArrayAccess;
 use RedBeanPHP\{
     OODBBean, SimpleModel
 };
@@ -18,12 +20,12 @@ use Throwable;
 use function NGSOFT\Manju\toCamelCase;
 
 /**
- *
+ * Manju Base Model
  * @property-read int $id
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
  */
-class Model extends SimpleModel implements ArrayAccess, JsonSerializable {
+class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 

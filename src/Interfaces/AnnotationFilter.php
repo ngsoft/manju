@@ -2,7 +2,7 @@
 
 namespace Manju\Interfaces;
 
-use NGSOFT\Tools\Reflection\Annotation;
+use NGSOFT\Manju\Reflection\Annotation;
 
 interface AnnotationFilter {
 
