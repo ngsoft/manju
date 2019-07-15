@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Manju\Helpers;
 
-use InvalidArgumentException;
+use ArrayIterator,
+    Countable,
+    InvalidArgumentException,
+    IteratorAggregate;
 use Manju\{
     Exceptions\InvalidProperty, ORM\Model
 };
 use RedBeanPHP\OODBBean;
-use function NGSOFT\Tools\{
-    noop, toCamelCase
-};
+use function NGSOFT\Manju\toCamelCase;
 
 /**
  * Collection Object for related beans based on doctrine/collection
  * @property-read int $length
  */
-class Set implements \IteratorAggregate, \Countable {
+class Set implements IteratorAggregate, Countable {
 
     /** @var array<Model> */
     private $list = [];
@@ -261,7 +262,7 @@ class Set implements \IteratorAggregate, \Countable {
         return null;
     }
 
-    ////////////////////////////   _SEPARATOR__magics   ////////////////////////////
+    ////////////////////////////   __magics   ////////////////////////////
 
     /** {@inheritdoc} */
     public function __get($prop) {
@@ -272,12 +273,12 @@ class Set implements \IteratorAggregate, \Countable {
 
     /** {@inheritdoc} */
     public function __set($p, $v) {
-        noop($p, $v);
+
     }
 
     /** {@inheritdoc} */
     public function __unset($p) {
-        noop($p);
+
     }
 
     ////////////////////////////   Iterator   ////////////////////////////
@@ -288,7 +289,7 @@ class Set implements \IteratorAggregate, \Countable {
     }
 
     public function getIterator() {
-        return new \ArrayIterator($this->list);
+        return new ArrayIterator($this->list);
     }
 
 }

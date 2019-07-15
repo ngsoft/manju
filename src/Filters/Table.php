@@ -4,7 +4,7 @@ namespace Manju\Filters;
 
 use Manju\Helpers\AnnotationFilterAbstract;
 use Manju\ORM\Model;
-use NGSOFT\Tools\Reflection\Annotation;
+use NGSOFT\Manju\Reflection\Annotation;
 
 class Table extends AnnotationFilterAbstract {
 

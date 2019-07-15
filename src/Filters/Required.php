@@ -2,9 +2,10 @@
 
 namespace Manju\Filters;
 
-use Manju\Helpers\AnnotationFilterAbstract;
-use Manju\ORM\Model;
-use NGSOFT\Tools\Reflection\Annotation;
+use Manju\{
+    Helpers\AnnotationFilterAbstract, ORM\Model
+};
+use NGSOFT\Manju\Reflection\Annotation;
 
 class Required extends AnnotationFilterAbstract {
 

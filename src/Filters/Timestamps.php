@@ -3,7 +3,7 @@
 namespace Manju\Filters;
 
 use Manju\Helpers\AnnotationFilterAbstract,
-    NGSOFT\Tools\Reflection\Annotation;
+    NGSOFT\Manju\Reflection\Annotation;
 
 class Timestamps extends AnnotationFilterAbstract {
 
