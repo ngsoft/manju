@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Manju\Helpers;
 
-use Manju\Interfaces\AnnotationFilter;
+use Manju\Interfaces\AnnotationFilter,
+    NGSOFT\Manju\Reflection\Annotation;
 
 abstract class AnnotationFilterAbstract implements AnnotationFilter {
 

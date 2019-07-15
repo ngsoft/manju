@@ -1,6 +1,6 @@
 <?php
 
-namespace NGSOFT\Manju\Reflection;
+namespace Manju\Reflection;
 
 use ReflectionClass,
     ReflectionClassConstant,

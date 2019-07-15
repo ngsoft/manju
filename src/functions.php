@@ -1,6 +1,9 @@
 <?php
 
-namespace NGSOFT\Manju;
+namespace Manju;
+
+use ReflectionClass,
+    stdClass;
 
 /**
  * Checks if haystack begins with needle
@@ -69,6 +72,28 @@ function autoloadDir(string $path): void {
             autoloadDir($path . DIRECTORY_SEPARATOR . $file);
         }
     } else if (is_file($path) and endsWith($path, '.php')) includeOnce($path);
+}
+
+/**
+ * Wrap include_once outside of the global scope
+ * @param string $file File to include
+ * @param array<string, mixed> $data Variables to export
+ * @return mixed
+ */
+function includeOnce(string $file, array $data = []) {
+    extract($data);
+    return is_file($file) ? include_once $file : false;
+}
+
+/**
+ * Wrap include_once outside of the global scope
+ * @param string $path
+ * @param array<string,mixed> $data Packed data
+ * @return mixed
+ */
+function includeFile(string $path, array $data = []) {
+    extract($data);
+    return is_file($path) ? include $path : false;
 }
 
 /**
