@@ -95,7 +95,7 @@ class Set implements IteratorAggregate, Countable {
         $list = [];
         foreach ($this->list as $model) {
             assert(is_bool(($retval = $condition($model))));
-            if (false === $condition) unset($this->bean->{$this->key}[$model->id]);
+            if (false === $retval) unset($this->bean->{$this->key}[$model->id]);
             else $list[] = $model;
         }
         if (count($list) !== $this->getLength()) $this->list = $list;
@@ -271,12 +271,18 @@ class Set implements IteratorAggregate, Countable {
         return $this->{$method}();
     }
 
-    /** {@inheritdoc} */
+    /**
+     * {@inheritdoc}
+     * @suppress PhanUnusedPublicNoOverrideMethodParameter
+     */
     public function __set($p, $v) {
 
     }
 
-    /** {@inheritdoc} */
+    /**
+     * {@inheritdoc}
+     * @suppress PhanUnusedPublicNoOverrideMethodParameter
+     */
     public function __unset($p) {
 
     }

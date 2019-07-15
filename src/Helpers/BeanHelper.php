@@ -193,7 +193,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         //Reads annotations
-        $parser = new Parser(ORM::getPsrlogger());
+        $parser = new Parser();
         if ($annotations = $parser->ParseAll($refl)) {
             //parse only extended Models, not base models annotations
             $annotations = array_filter($annotations, function ($ann) {
