@@ -17,13 +17,13 @@
     },
     "require": {
         "php": ">=7.1",
-        "gabordemooij/redbean": "*",
-        "ngsoft/tools": "^1.0"
+        "gabordemooij/redbean": "*"
     },
     "autoload": {
         "psr-4": {
             "Manju\\": "src/"
-        }
+        },
+        "files": ["src/functions.php"]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
