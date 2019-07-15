@@ -17,7 +17,7 @@ use RedBeanPHP\{
     OODBBean, SimpleModel
 };
 use Throwable;
-use function NGSOFT\Manju\toCamelCase;
+use function Manju\toCamelCase;
 
 /**
  * Manju Base Model

@@ -4,7 +4,7 @@ namespace Manju\Filters;
 
 use Manju\Helpers\AnnotationFilterAbstract;
 use Manju\ORM\Model;
-use NGSOFT\Manju\Reflection\Annotation;
+use Manju\Reflection\Annotation;
 
 class Unique extends AnnotationFilterAbstract {
 

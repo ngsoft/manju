@@ -5,7 +5,7 @@ namespace Manju\Filters;
 use Manju\{
     Helpers\AnnotationFilterAbstract, ORM\Model
 };
-use NGSOFT\Manju\Reflection\Annotation;
+use Manju\Reflection\Annotation;
 
 class Ignore extends AnnotationFilterAbstract {
 

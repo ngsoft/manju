@@ -12,7 +12,7 @@ use Manju\{
     Exceptions\InvalidProperty, ORM\Model
 };
 use RedBeanPHP\OODBBean;
-use function NGSOFT\Manju\toCamelCase;
+use function Manju\toCamelCase;
 
 /**
  * Collection Object for related beans based on doctrine/collection

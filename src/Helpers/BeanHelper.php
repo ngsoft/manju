@@ -7,7 +7,7 @@ namespace Manju\Helpers;
 use Manju\{
     Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model
 };
-use \NGSOFT\Manju\Reflection\Parser,
+use Manju\Reflection\Parser,
     Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, OODBBean, SimpleModel
@@ -15,7 +15,7 @@ use RedBeanPHP\{
 use ReflectionClass,
     SplFileInfo,
     Throwable;
-use function NGSOFT\Manju\{
+use function Manju\{
     array_to_object, autoloadDir, findClassesImplementing, toSnake
 };
 
