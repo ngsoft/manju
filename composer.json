@@ -17,7 +17,8 @@
     },
     "require": {
         "php": ">=7.1",
-        "gabordemooij/redbean": "*"
+        "gabordemooij/redbean": "*",
+        "symfony/polyfill-mbstring": "*"
     },
     "autoload": {
         "psr-4": {
