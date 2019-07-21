@@ -11,7 +11,7 @@ use ArrayAccess,
     IteratorAggregate,
     JsonSerializable;
 use Manju\{
-    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Set, ORM
+    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Collection, Helpers\Set, ORM
 };
 use RedBeanPHP\{
     OODBBean, SimpleModel
@@ -125,6 +125,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     /**
      * Loads a bean with the data corresponding to the id
      *
+     * @suppress PhanTypeInstantiateAbstractStatic
      * @param int|null $id if not set it will just create an empty Model
      * @return static Instance of Model
      */
@@ -227,7 +228,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     /**
      * Get many to many related Collection
      * @param Model|string $model Related Model
-     * @return Set|null
+     * @return Collection|null
      */
     public function getSharedList($model) {
         $this->bean or static::create($this);
@@ -238,7 +239,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
             $key = sprintf("shared%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
-            return new Set($this, $relatedClass, $key);
+            return Collection::create($model, $relatedClass, $key);
         }
         return null;
     }
@@ -257,7 +258,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
             $key = sprintf("xown%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
-            return new Set($this, $relatedClass, $key);
+            return Collection::create($model, $relatedClass, $key);
         }
         return null;
     }
