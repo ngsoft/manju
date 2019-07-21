@@ -51,6 +51,8 @@ class ORM extends Facade {
                 self::$config[$k] = $config[$k];
             }
         }
+        if (isset($config[LoggerInterface::class])) self::setPsrlogger($config[LoggerInterface::class]);
+        if (isset($config[CacheItemPoolInterface::class])) self::setCachePool($config[CacheItemPoolInterface::class]);
     }
 
     /**
@@ -94,8 +96,6 @@ class ORM extends Facade {
 
             $helper = new BeanHelper(self::$config["models"], self::$config["metacachettl"]);
             self::getRedBean()->setBeanHelper($helper);
-
-
 
             self::$started = true;
         }
