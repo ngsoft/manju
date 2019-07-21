@@ -25,7 +25,7 @@ use function Manju\toCamelCase;
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
  */
-class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
+abstract class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 

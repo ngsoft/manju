@@ -15,7 +15,10 @@ class Bean extends OODBBean {
      * @internal
      */
     private function getModel(): ?Model {
-        if ($model = $this->getMeta("model") and $model instanceof Model) return $model;
+        if (
+                ($model = $this->getMeta("model"))
+                and $model instanceof Model
+        ) return $model;
         return null;
     }
 
