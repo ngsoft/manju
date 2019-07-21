@@ -236,7 +236,6 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                 ($type = $this->getModelType($model))
                 and $type !== $this->getMeta($type)
         ) {
-
             $key = sprintf("shared%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
             return Collection::create($model, $relatedClass, $key);
