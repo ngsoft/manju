@@ -238,7 +238,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         ) {
             $key = sprintf("shared%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
-            return Collection::create($model, $relatedClass, $key);
+            return Collection::create($this, $relatedClass, $key);
         }
         return null;
     }
@@ -257,7 +257,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
             $key = sprintf("xown%sList", ucfirst($type));
             $relatedClass = ($model instanceof Model) ? get_class($model) : $model;
-            return Collection::create($model, $relatedClass, $key);
+            return Collection::create($this, $relatedClass, $key);
         }
         return null;
     }
