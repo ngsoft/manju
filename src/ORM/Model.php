@@ -476,7 +476,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                 if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
             }
             foreach ($meta->converters as $prop => $converter) {
-
+                if ($this->{$prop} === null) continue;
                 if (!$converter::isValid($this->{$prop})) {
                     throw new ValidationError(
                             get_class($this) . '::$' . $prop . " Invalid Type " .

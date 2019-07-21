@@ -25,7 +25,7 @@ class B64Serializable implements Converter {
 
     /** {@inheritdoc} */
     public static function getTypes(): array {
-        return ["object", "array"];
+        return ["array", "object"];
     }
 
     /** {@inheritdoc} */
