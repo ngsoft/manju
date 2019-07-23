@@ -104,6 +104,23 @@ class ORM extends Facade {
     }
 
     /**
+     * Set the log level
+     * @param int|string $level
+     */
+    public static function setLogLevel($level) {
+        assert(is_int($level) or is_string($level));
+        self::$config["loglevel"] = $level;
+    }
+
+    /**
+     * Get the log level
+     * @return int|string
+     */
+    public static function getLogLevel() {
+        return self::$config["loglevel"];
+    }
+
+    /**
      * Get current declared logger
      * @return LoggerInterface|null
      */
