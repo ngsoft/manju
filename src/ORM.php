@@ -53,6 +53,9 @@ class ORM extends Facade {
                 self::$config[$k] = $config[$k];
             }
         }
+        if (isset($config["loglevel"])
+                and ( is_int($config["loglevel"]) or is_string($config["loglevel"]))
+        ) self::setLogLevel($config["loglevel"]);
         if (isset($config[LoggerInterface::class])) self::setPsrlogger($config[LoggerInterface::class]);
         if (isset($config[CacheItemPoolInterface::class])) self::setCachePool($config[CacheItemPoolInterface::class]);
     }
