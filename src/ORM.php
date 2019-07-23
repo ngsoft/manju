@@ -28,8 +28,8 @@ class ORM extends Facade {
     protected static $config = [
         "metacachettl" => 60 * 60 * 24,
         "models" => [],
-        "timezone" => "Europe/Paris",
         "connection" => "default",
+        "loglevel" => "debug",
         "db" => [
             "default" => [
                 "dsn" => null,
@@ -89,7 +89,7 @@ class ORM extends Facade {
                 if (self::$config["connection"] !== "default") self::selectDatabase(self::$config["connection"]);
             }
             if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
-            date_default_timezone_set(self::$config["timezone"]);
+
 
             //preload converters
             autoloadDir(__DIR__ . '/Converters');
