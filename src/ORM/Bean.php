@@ -23,30 +23,25 @@ class Bean extends OODBBean {
     }
 
     public function open() {
-        ($model = $this->getModel()) and $model->_load();
+        if ($model = $this->getModel()) {
+            $model->_load();
+            if (method_exists($model, "open")) $model->open();
+        }
     }
 
     public function after_update() {
-        ($model = $this->getModel()) and $model->_load();
+        if ($model = $this->getModel()) {
+            $model->_load();
+            if (method_exists($model, "after_update")) $model->after_update();
+        }
     }
 
     public function update() {
         if ($model = $this->getModel()) {
             $model->_validate(); ; //use validators
             $model->_update(); //inject model data into bean
+            if (method_exists($model, "update")) $model->update();
         }
-    }
-
-    public function dispense() {
-        // ($model = $this->getModel()) and $model->_reload();
-    }
-
-    public function after_delete() {
-        //($model = $this->getModel()) and $model->_clear();
-    }
-
-    public function delete() {
-
     }
 
 }
