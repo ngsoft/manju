@@ -83,15 +83,16 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Finds entries using an optional SQL statement
      * @param string|null $sql SQL query to find the desired bean, starting right after WHERE clause
      * @param array $bindings array of values to be bound to parameters in query
-     * @return array<static>
+     * @return static[]
      */
     public static function find(string $sql = null, array $bindings = []) {
+        $result = [];
         if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            return \array_map(function (OODBBean $bean) {
-                return $bean->box();
-            }, ORM::find($type, $sql, $bindings));
+            foreach (ORM::find($type, $sql, $bindings) as $bean) {
+                $result[] = $bean->box();
+            }
         }
-        return [];
+        return $result;
     }
 
     /**
@@ -136,7 +137,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /**
-     * Creates A new Model instance
+     * Creates a new Model instance
      * @param Model|null $model Description
      * @return static
      */
@@ -174,10 +175,10 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Store current Entry into the database
-     * @param bool|null $throws_validation_error
+     * @param bool $throws_validation_error
      * @return int|null
      */
-    public function save(bool $throws_validation_error = null): ?int {
+    public function save(bool $throws_validation_error = false): ?int {
         if (!($this->bean)) BeanHelper::dispenseFor($this);
         $id = null;
         if ($this->bean instanceof OODBBean) {
