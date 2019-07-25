@@ -81,6 +81,9 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Finds entries using an optional SQL statement
+     * Unlike RedBean finder it doesn't use the bean ID as key (but keep the same order)
+     * Great to extract data using array_map() for example
+     *
      * @param string|null $sql SQL query to find the desired bean, starting right after WHERE clause
      * @param array $bindings array of values to be bound to parameters in query
      * @return static[]
