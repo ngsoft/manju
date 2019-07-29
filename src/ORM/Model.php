@@ -11,7 +11,7 @@ use ArrayAccess,
     IteratorAggregate,
     JsonSerializable;
 use Manju\{
-    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Collection, Helpers\Set, ORM
+    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Collection, ORM
 };
 use RedBeanPHP\{
     OODBBean, SimpleModel
@@ -95,7 +95,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Get the affected to the current model
      * @return array<string>
      */
-    public function getTags(): array {
+    public function getTags() {
         $this->bean or static::create($this);
         $result = [];
         foreach ($this->bean->sharedTag as $tag) {
@@ -118,12 +118,13 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Removes the given tags from the current model
-     * @param type $tags
-     * @return void
+     * @param string ...$tags
+     * @return static
      */
-    public function removeTags(string ...$tags): void {
+    public function removeTags(string ...$tags) {
         $this->bean or static::create($this);
         if (count($tags)) ORM::untag($this->bean, $tags);
+        return $this;
     }
 
     /**
@@ -278,7 +279,15 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @return static
      */
     public static function from(array $array) {
-        return self::__setState($array);
+
+        $model = static::create();
+        foreach ($array as $key => $val) {
+            try {
+                $model->offsetSet($key, $val);
+            } catch (Throwable $ex) { $ex->getCode(); }
+        }
+
+        return $model;
     }
 
     /**
@@ -379,7 +388,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     /**
      * Get one to many related Collection
      * @param Model|string $model Related Model
-     * @return Set|null
+     * @return Collection|null
      */
     public function getOwnedList($model) {
         $this->bean or static::create($this);
