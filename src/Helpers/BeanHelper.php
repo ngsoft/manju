@@ -48,7 +48,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     public function getModelForBean(OODBBean $bean) {
         $type = $bean->getMeta('type');
         // store_product (glue mtm) don't need models
-        if (preg_match(Model::VALID_BEAN, $type)) {
+        if (preg_match(Model::VALID_BEAN, $type) and ! in_array($type, self::$ignoreTypeList)) {
             try {
                 if (self::$for instanceof Model) {
                     $model = self::$for;
@@ -56,7 +56,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                 } elseif (isset(self::$models[$type])) {
                     $class = self::$models[$type];
                     $model = new $class();
-                } elseif (!in_array($type, self::$ignoreTypeList)) throw new ManjuException("Cannot find any model with type $type");
+                } else throw new ManjuException("Cannot find any model with type $type");
             } catch (Throwable $exc) { $exc->getCode(); }
             if (isset($model)) {
                 $model->loadBean($bean);
