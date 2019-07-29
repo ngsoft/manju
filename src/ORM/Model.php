@@ -82,12 +82,19 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Set the tags for the current model
-     * @param string ...$tags
+     * @param string[] $tags
      * @return static
      */
-    public function setTags(string ...$tags) {
+    public function setTags(array $tags) {
         $this->bean or static::create($this);
-        if (count($tags) > 0) ORM::tag($this->bean, $tags);
+        if (count($tags) > 0) {
+            $newtags = [];
+            foreach ($tags as $tag) {
+                if (!is_string($tag)) throw new ValidationError("Invalid tag type: not a string, " . gettype($tag)) . " given";
+                $newtags[] = $tag;
+            }
+            ORM::tag($this->bean, $newtags);
+        }
         return $this;
     }
 
@@ -98,10 +105,9 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     public function getTags() {
         $this->bean or static::create($this);
         $result = [];
-        foreach ($this->bean->sharedTag as $tag) {
-            $result[] = $tag->title;
+        foreach ($this->bean->sharedTag as $bean) {
+            $result[] = $bean->title;
         }
-
         return $result;
     }
 
