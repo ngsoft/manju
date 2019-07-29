@@ -24,6 +24,11 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var array<string,string> */
     protected static $models = [];
 
+    /** @var string[] */
+    protected static $ignoreTypeList = [
+        "tag",
+    ];
+
     /** @var array<string,\stdClass> */
     public static $metadatas = [];
 
@@ -51,11 +56,11 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                 } elseif (isset(self::$models[$type])) {
                     $class = self::$models[$type];
                     $model = new $class();
-                } else throw new ManjuException("Cannot find any model with type $type");
+                } elseif (!in_array($type, self::$ignoreTypeList)) throw new ManjuException("Cannot find any model with type $type");
+            } catch (Throwable $exc) { $exc->getCode(); }
+            if (isset($model)) {
                 $model->loadBean($bean);
                 return $model;
-            } catch (Throwable $exc) {
-                $exc->getCode();
             }
         }
         return parent::getModelForBean($bean);
