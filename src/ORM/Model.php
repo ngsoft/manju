@@ -24,6 +24,7 @@ use function Manju\toCamelCase;
  * @property-read int $id
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
+ * @property array<string> $tags 
  */
 abstract class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
 
@@ -77,7 +78,121 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         return $this->updated_at ?? new DateTime();
     }
 
+    ////////////////////////////   Tags   ////////////////////////////
+
+    /**
+     * Set the tags for the current model
+     * @param string ...$tags
+     * @return static
+     */
+    public function setTags(string ...$tags) {
+        $this->bean or static::create($this);
+        if (count($tags) > 0) ORM::tag($this->bean, $tags);
+        return $this;
+    }
+
+    /**
+     * Get the affected to the current model
+     * @return array<string>
+     */
+    public function getTags(): array {
+        $this->bean or static::create($this);
+        return ORM::tag($this->bean);
+    }
+
+    /**
+     * Adds the given tags to the current model
+     * @param string ...$tags
+     * @return static
+     */
+    public function addTags(string ...$tags) {
+        $this->bean or static::create($this);
+        if (count($tags)) ORM::addTags($this->bean, $tags);
+        return $this;
+    }
+
+    /**
+     * Removes the given tags from the current model
+     * @param type $tags
+     * @return void
+     */
+    public function removeTags(string ...$tags): void {
+        $this->bean or static::create($this);
+        if (count($tags)) ORM::untag($this->bean, $tags);
+    }
+
+    /**
+     * Removes all tags from current model
+     * @return static
+     */
+    public function clearTags() {
+        $this->bean or static::create($this);
+        ORM::getRedBean()->getAssociationManager()->clearRelations($this->bean, 'tag');
+        return $this;
+    }
+
     ////////////////////////////   SQL Helpers   ////////////////////////////
+
+    /**
+     * Find models that contains at least one of the given tags
+     * @param array<string> $tags
+     * @param string $sql
+     * @param array $bindings
+     * @return static[]
+     */
+    public static function findTagged(array $tags, string $sql = "", array $bindings = []) {
+        $result = [];
+        if (
+                count($tags)
+                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
+        ) {
+
+            foreach (ORM::tagged($type, $tags, $sql, $bindings) as $bean) {
+                $result[] = $bean->box();
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find models that contains all of the given tags
+     * @param array<string> $tags
+     * @param string $sql
+     * @param array $bindings
+     * @return static[]
+     */
+    public static function findTaggedAll(array $tags, string $sql = "", array $bindings = []) {
+        $result = [];
+        if (
+                count($tags)
+                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
+        ) {
+
+            foreach (ORM::taggedAll($type, $tags, $sql, $bindings) as $bean) {
+                $result[] = $bean->box();
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Count models that contains all of the given tags
+     * @param array<string> $tags
+     * @param string $sql
+     * @param array $bindings
+     * @return int
+     */
+    public static function countTaggedAll(array $tags, string $sql = "", array $bindings = []): int {
+        $result = 0;
+        if (
+                count($tags)
+                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
+        ) {
+
+            $result = ORM::countTaggedAll($type, $tags, $sql, $bindings);
+        }
+        return $result;
+    }
 
     /**
      * Finds entries using an optional SQL statement
