@@ -22,6 +22,11 @@ class Bean extends OODBBean {
         return null;
     }
 
+    /**
+     * Event triggered when a bean is loaded from database
+     * ORM::load()
+     * @suppress PhanUndeclaredMethod
+     */
     public function open() {
         if ($model = $this->getModel()) {
             $model->_load();
@@ -29,13 +34,23 @@ class Bean extends OODBBean {
         }
     }
 
+    /**
+     * Event triggered just after a bean is saved into the database
+     * ORM::save()
+     * @suppress PhanUndeclaredMethod
+     */
     public function after_update() {
         if ($model = $this->getModel()) {
-            $model->_load();
+            $model->_load(); //sync the id
             if (method_exists($model, "after_update")) $model->after_update();
         }
     }
 
+    /**
+     * Event triggered just before a bean is saved into the database
+     * ORM::save()
+     * @suppress PhanUndeclaredMethod
+     */
     public function update() {
         if ($model = $this->getModel()) {
             if (method_exists($model, "update")) $model->update();

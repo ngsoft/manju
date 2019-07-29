@@ -24,7 +24,7 @@ use function Manju\toCamelCase;
  * @property-read int $id
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
- * @property array<string> $tags 
+ * @property array<string> $tags
  */
 abstract class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
 
@@ -97,7 +97,12 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function getTags(): array {
         $this->bean or static::create($this);
-        return ORM::tag($this->bean);
+        $result = [];
+        foreach ($this->bean->sharedTag as $tag) {
+            $result[] = $tag->title;
+        }
+
+        return $result;
     }
 
     /**
@@ -256,7 +261,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Creates a new Model instance
-     * @param Model|null $model Description
+     * @param Model|null $model
      * @return static
      */
     public static function create(Model $model = null) {
@@ -265,6 +270,15 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
             return $model;
         }
         return self::load();
+    }
+
+    /**
+     * Creates a new Model instance using given array as data
+     * @param array $array
+     * @return static
+     */
+    public static function from(array $array) {
+        return self::__setState($array);
     }
 
     /**
