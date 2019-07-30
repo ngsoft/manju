@@ -87,7 +87,10 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function setTags(array $tags) {
         $this->bean or static::create($this);
-        if (count($tags) > 0) {
+        if (
+                count($tags) > 0
+                and $this->id > 0
+        ) {
             $newtags = [];
             foreach ($tags as $tag) {
                 if (!is_string($tag)) throw new ValidationError("Invalid tag type: not a string, " . gettype($tag)) . " given";
@@ -105,8 +108,10 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     public function getTags() {
         $this->bean or static::create($this);
         $result = [];
-        foreach ($this->bean->sharedTag as $bean) {
-            $result[] = $bean->title;
+        if ($this->id > 0) {
+            foreach ($this->bean->sharedTag as $bean) {
+                $result[] = $bean->title;
+            }
         }
         return $result;
     }
@@ -118,7 +123,9 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function addTags(string ...$tags) {
         $this->bean or static::create($this);
-        if (count($tags)) ORM::addTags($this->bean, $tags);
+        if (count($tags) and $this->id > 0) {
+            ORM::addTags($this->bean, $tags);
+        }
         return $this;
     }
 
@@ -129,8 +136,26 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function removeTags(string ...$tags) {
         $this->bean or static::create($this);
-        if (count($tags)) ORM::untag($this->bean, $tags);
+        if (count($tags) && $this->id > 0) {
+            ORM::untag($this->bean, $tags);
+        }
         return $this;
+    }
+
+    /**
+     * Checks if current model has given tags
+     * @param string ...$tags
+     * @return bool
+     */
+    public function hasTags(string ...$tags): bool {
+        $this->bean or static::create($this);
+        if (count($tags) and $this->id > 0) {
+            $otags = $this->getTags();
+            foreach ($tags as $tag) {
+                if (!in_array($tag, $otags)) return false;
+            }
+        } else return false;
+        return true;
     }
 
     /**
@@ -139,7 +164,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function clearTags() {
         $this->bean or static::create($this);
-        ORM::getRedBean()->getAssociationManager()->clearRelations($this->bean, 'tag');
+        if ($this->id > 0) ORM::getRedBean()->getAssociationManager()->clearRelations($this->bean, 'tag');
         return $this;
     }
 
