@@ -73,7 +73,7 @@ final class ORM extends Facade {
      */
     public static function setContainer(ContainerInterface $container) {
         self::$container = $container;
-        if ($container->has(LoggerInterface::class)) self::setLogger($container->get(LoggerInterface::class));
+        if ($container->has(LoggerInterface::class)) self::setORMLogger($container->get(LoggerInterface::class));
         if ($container->has(CacheItemPoolInterface::class)) self::setCachePool($container->get(CacheItemPoolInterface::class));
         if ($container->has(Connection::class)) {
             $connection = $container->get(Connection::class);
@@ -84,7 +84,7 @@ final class ORM extends Facade {
     /**
      *  @return LoggerInterface|null
      */
-    public static function getLogger(): ?LoggerInterface {
+    public static function getORMLogger(): ?LoggerInterface {
         return self::$psrlogger;
     }
 
@@ -100,6 +100,7 @@ final class ORM extends Facade {
      * @param Connection $connection
      * @param bool $select Select the connection added.
      * @throws ManjuException
+     * @suppress PhanTypeMismatchArgumentNullable
      */
     public static function addConnection(Connection $connection, bool $select = false) {
         $name = $connection->getName();
@@ -124,7 +125,7 @@ final class ORM extends Facade {
      * @param LoggerInterface $psrlogger
      * @param string|null $loglevel
      */
-    public static function setLogger(LoggerInterface $psrlogger, string $loglevel = null) {
+    public static function setORMLogger(LoggerInterface $psrlogger, string $loglevel = null) {
         self::$psrlogger = $psrlogger;
         if ($loglevel !== null) self::$loglevel = $loglevel;
     }
@@ -139,7 +140,7 @@ final class ORM extends Facade {
     /**
      * Adds a PSR Cache Pool
      * @param CacheItemPoolInterface $cache
-     * @param int $ttl
+     * @param int|null $ttl
      */
     public static function setCachePool(CacheItemPoolInterface $cache, int $ttl = null) {
         if ($ttl !== null) self::$ttl = $ttl;

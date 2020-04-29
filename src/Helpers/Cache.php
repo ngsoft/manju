@@ -49,7 +49,7 @@ class Cache implements CacheItemPoolInterface {
 
     /** {@inheritdoc} */
     public function getItems(array $keys = []) {
-
+        return $this->cache->getItems($keys);
     }
 
     /** {@inheritdoc} */
