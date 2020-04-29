@@ -1,12 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\Exceptions;
 
-use InvalidArgumentException,
-    Manju\ORM,
-    Psr\Log\LoggerInterface;
-
-class ValidationError extends InvalidArgumentException {
+class ValidationError extends \InvalidArgumentException {
 
     use LogException;
 }

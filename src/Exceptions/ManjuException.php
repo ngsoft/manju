@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\Exceptions;
 
 use Manju\ORM,
-    Psr\Log\LoggerInterface,
     Exception;
 
 class ManjuException extends Exception {

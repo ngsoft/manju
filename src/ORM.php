@@ -57,7 +57,7 @@ final class ORM extends Facade {
      * @param string ...$path Directories where to find models extending Manju\ORM\Model
      */
     public static function addModelPath(string ...$path) {
-        BeanHelper::addModelPath(...$pathtomodels);
+        BeanHelper::addModelPath(...$path);
     }
 
     /**
