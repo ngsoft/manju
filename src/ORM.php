@@ -33,8 +33,11 @@ final class ORM extends Facade {
     /** @var int */
     private static $ttl = 60 * 60 * 24; // 1 day (cache will detects models changes)
 
+    public static function start(string ...$pathtomodels) {
+
+    }
+
     /**
-     *
      * @return ContainerInterface|null
      */
     public static function getContainer(): ?ContainerInterface {

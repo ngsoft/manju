@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Manju\Helpers;
 
 use Manju\{
-    Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model
+    Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model,
+    Reflection\Parser
 };
-use Manju\Reflection\Parser,
-    Psr\Cache\CacheItemPoolInterface;
+use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, OODBBean, SimpleModel
 };
@@ -41,14 +41,11 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var Model|null */
     protected static $for;
 
-    /** @var int */
-    protected static $metacachettl;
-
     /** {@inheritdoc} */
     public function getModelForBean(OODBBean $bean) {
         $type = $bean->getMeta('type');
         // store_product (glue mtm) don't need models
-        if (preg_match(Model::VALID_BEAN, $type) and ! in_array($type, self::$ignoreTypeList)) {
+        if (preg_match(Model::VALID_BEAN, $type) and!in_array($type, self::$ignoreTypeList)) {
             try {
                 if (self::$for instanceof Model) {
                     $model = self::$for;
@@ -56,7 +53,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                 } elseif (isset(self::$models[$type])) {
                     $class = self::$models[$type];
                     $model = new $class();
-                } else throw new ManjuException("Cannot find any model with type $type");
+                } else throw new ManjuException("Cannot find any model with type $type"); //log error
             } catch (Throwable $exc) { $exc->getCode(); }
             if (isset($model)) {
                 $model->loadBean($bean);
@@ -81,19 +78,21 @@ class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     /**
-     * @param array<string> $models
-     * @param int|null $metacachettl
-     * @throws ManjuException
+     * Adds Model search path
+     * @param string ...$pathList
      */
-    public function __construct(array $models, int $metacachettl = null) {
-        if (is_int($metacachettl)) self::$metacachettl = $metacachettl;
-        foreach ($models as $path) {
-            autoloadDir($path);
+    public static function addModelPath(string ... $pathList) {
+
+        foreach ($pathList as $path) {
+            $real = realpath($path);
+            if ($real === false || is_dir($real) === false) throw new ManjuException("Invalid model path $path.");
+            autoloadDir($real);
         }
+
         $models = findClassesImplementing(Model::class);
-        if (empty($models)) throw new ManjuException("Cannot locate any models extending " . Model::class);
-        foreach ($models as $model) {
-            $instance = new $model();
+        if (empty($models)) throw new ManjuException("Cannot find any instance of " . Model::class . " within the given paths.");
+        foreach ($models as $class) {
+            $instance = new $class();
             self::addModel($instance);
         }
     }
@@ -187,7 +186,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
                     ($prop->class !== Model::class )
                     and ( $prop->class !== SimpleModel::class )
                     and $prop->isProtected()
-                    and ! $prop->isPrivate() and ! $prop->isStatic()
+                    and!$prop->isPrivate() and!$prop->isStatic()
             ) {
                 $meta["properties"][] = $prop->name;
                 $meta["converters"][$prop->name] = Text::class;
@@ -243,7 +242,6 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         //save cache (if any)
         if ($pool instanceof CacheItemPoolInterface and isset($item)) {
             $item->set($meta);
-            $item->expiresAfter(self::$metacachettl);
             $pool->save($item);
         }
 
