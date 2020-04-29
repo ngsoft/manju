@@ -31,31 +31,7 @@ final class ORM extends Facade {
     private static $cache;
 
     /** @var int */
-    private static $ttl = 60 * 60 * 24;
-
-    /** @var array<string,Connection> */
-    private static $connections = [];
-
-    /** {@inheritdoc} */
-    public static function setup($dsn = NULL, $username = NULL, $password = NULL, $frozen = FALSE, $partialBeans = FALSE) {
-        if (is_null($dsn)) {
-            $dsn = 'sqlite:/' . sys_get_temp_dir() . '/red.db';
-        }
-
-        self::addDatabase('default', $dsn, $username, $password, $frozen, $partialBeans);
-        self::selectDatabase('default');
-
-        return self::$toolbox;
-    }
-
-    /** {@inheritdoc} */
-    public static function addDatabase($key, $dsn, $user = "", $pass = NULL, $frozen = FALSE, $partialBeans = FALSE) {
-        if (strlen($user) === 0) $user = null;
-        $connection = new Connection(["dsn" => $dsn, "username" => $user, "password" => $pass], $frozen, $key);
-        $this->addConnection($connection);
-
-        parent::addDatabase($key, $dsn, $user, $pass, $frozen, $partialBeans);
-    }
+    private static $ttl = 60 * 60 * 24; // 1 day (cache will detects models changes)
 
     /**
      *
@@ -71,8 +47,12 @@ final class ORM extends Facade {
      */
     public static function setContainer(ContainerInterface $container) {
         self::$container = $container;
-        if ($container->has(LoggerInterface::class)) $this->setLogger($container->get(LoggerInterface::class));
-        if ($container->has(CacheItemPoolInterface::class)) $this->setCachePool($container->get(CacheItemPoolInterface::class));
+        if ($container->has(LoggerInterface::class)) self::setLogger($container->get(LoggerInterface::class));
+        if ($container->has(CacheItemPoolInterface::class)) self::setCachePool($container->get(CacheItemPoolInterface::class));
+        if ($container->has(Connection::class)) {
+            $connection = $container->get(Connection::class);
+            self::addConnection($connection, true);
+        }
     }
 
     /**
@@ -92,11 +72,24 @@ final class ORM extends Facade {
     /**
      * Add a database connection to the ORM
      * @param Connection $connection
+     * @param bool $select Select the connection added.
      * @throws ManjuException
      */
-    public static function addConnection(Connection $connection) {
+    public static function addConnection(Connection $connection, bool $select = false) {
         $name = $connection->getName();
-        if (isset(self::$connections[$name])) throw new ManjuException("Connection $name already exists.");
+        if (isset(self::$toolboxes[$name])) throw new ManjuException("Connection $name already exists.");
+
+        self::addDatabase(
+                $connection->getName(),
+                $connection->getDSN(),
+                $connection->getUsername(),
+                $connection->getPassword(),
+                $connection->getFrozen()
+        );
+
+        if ($select === true) self::selectDatabase($name, true);
+
+        if (self::testConnection() === false) throw new ManjuException("Cannot connect to database.");
     }
 
     /**

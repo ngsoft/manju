@@ -8,10 +8,5 @@ use Manju\ORM,
 
 class ManjuException extends Exception {
 
-    public function __construct(string $message = "", int $code = 0, $previous = NULL) {
-        $logger = ORM::getPsrlogger();
-        if ($logger instanceof LoggerInterface) $logger->log(ORM::getLogLevel(), get_class($this) . ": " . $message);
-        parent::__construct($message, $code, $previous);
-    }
-
+    use LogException;
 }

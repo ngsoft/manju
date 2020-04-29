@@ -2,10 +2,12 @@
 
 namespace Manju;
 
+use Manju\Exceptions\ManjuException;
+
 class Connection {
 
     /** @var string */
-    private $name = "default";
+    private $name = "manju";
 
     /** @var string */
     private $dsn;
@@ -26,17 +28,17 @@ class Connection {
     ) {
         if ($name !== null) $this->name = $name;
         $this->dsn = $config["dsn"] ?? null;
-        $this->username = $config["username"] ?? null;
-        $this->password = $config["password"] ?? null;
+        $this->username = $config["username"] ?? $config["user"] ?? null;
+        $this->password = $config["password"] ?? $config["pass"] ?? null;
         $this->frozen = $frozen;
-        if (empty($this->dsn)) throw new RuntimeException("Invalid Connection, no dsn is supplied.");
+        if (empty($this->dsn)) throw new ManjuException("Invalid Connection, no dsn is supplied.");
     }
 
     public function getName(): string {
         return $this->name;
     }
 
-    public function getDsn(): string {
+    public function getDSN(): string {
         return $this->dsn;
     }
 
