@@ -13,7 +13,8 @@
 
         "psr/log": "*",
         "psr/cache": "*",
-        "wixel/gump": "*"
+        "wixel/gump": "*",
+        "psr/container": "^1.0"
     },
     "require": {
         "php": ">=7.1",

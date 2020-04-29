@@ -33,12 +33,22 @@ final class ORM extends Facade {
     /** @var array<string,Connection> */
     private static $connections = [];
 
-    public static function addDatabase($key, $dsn, $user = NULL, $pass = NULL, $frozen = FALSE, $partialBeans = FALSE) {
-        $connection = new Connection([
-            "dsn" => $dsn,
-            "username" => $user,
-            "password" => $pass
-                ], $frozen, $key);
+    /** {@inheritdoc} */
+    public static function setup($dsn = NULL, $username = NULL, $password = NULL, $frozen = FALSE, $partialBeans = FALSE) {
+        if (is_null($dsn)) {
+            $dsn = 'sqlite:/' . sys_get_temp_dir() . '/red.db';
+        }
+
+        self::addDatabase('default', $dsn, $username, $password, $frozen, $partialBeans);
+        self::selectDatabase('default');
+
+        return self::$toolbox;
+    }
+
+    /** {@inheritdoc} */
+    public static function addDatabase($key, $dsn, $user = "", $pass = NULL, $frozen = FALSE, $partialBeans = FALSE) {
+        if (strlen($user) === 0) $user = null;
+        $connection = new Connection(["dsn" => $dsn, "username" => $user, "password" => $pass], $frozen, $key);
         $this->addConnection($connection);
 
         parent::addDatabase($key, $dsn, $user, $pass, $frozen, $partialBeans);
@@ -94,7 +104,7 @@ final class ORM extends Facade {
      */
     public static function setCachePool(CacheItemPoolInterface $cache, int $ttl = null) {
         if ($ttl !== null) self::$ttl = $ttl;
-        self::$cache = new Cache($cache, $ttl);
+        self::$cache = new Cache($cache, self::$ttl);
     }
 
 }
