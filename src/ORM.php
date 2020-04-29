@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Manju;
 
 use Manju\{
-    Bun, Exceptions\ManjuException, Helpers\Cache, ORM\Bean
+    Bun, Exceptions\ManjuException, Helpers\BeanHelper, Helpers\Cache, ORM\Bean
 };
 use Psr\{
     Cache\CacheItemPoolInterface, Container\ContainerInterface, Log\LoggerInterface
@@ -33,8 +33,31 @@ final class ORM extends Facade {
     /** @var int */
     private static $ttl = 60 * 60 * 24; // 1 day (cache will detects models changes)
 
+    /**
+     * Starts Manju ORM
+     * @staticvar boolean $started
+     * @param string ...$pathtomodels Directories where to find models extending Manju\ORM\Model
+     * @throws ManjuException
+     */
     public static function start(string ...$pathtomodels) {
+        static $started;
+        if ($started !== true) {
+            if (empty(self::$toolboxes)) throw new ManjuException("Cannot start ORM, no connections set.");
+            if (self::testConnection() === false) throw new ManjuException("Cannot start ORM, cannot connect to the database.");
+            autoloadDir(__DIR__ . '/Converters'); autoloadDir(__DIR__ . '/Filters');
+            $helper = new BeanHelper();
+            self::getRedBean()->setBeanHelper($helper);
+            $started = true;
+        }
+        if (count($pathtomodels) > 0) self::addModelPath(...$pathtomodels);
+    }
 
+    /**
+     * Adds Path to Modelss
+     * @param string ...$path Directories where to find models extending Manju\ORM\Model
+     */
+    public static function addModelPath(string ...$path) {
+        BeanHelper::addModelPath(...$pathtomodels);
     }
 
     /**
@@ -90,9 +113,10 @@ final class ORM extends Facade {
                 $connection->getFrozen()
         );
 
-        if ($select === true) self::selectDatabase($name, true);
-
-        if (self::testConnection() === false) throw new ManjuException("Cannot connect to database.");
+        if ($select === true) {
+            self::selectDatabase($name, true);
+            if (self::testConnection() === false) throw new ManjuException("Cannot connect to database.");
+        }
     }
 
     /**

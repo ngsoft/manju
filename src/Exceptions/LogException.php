@@ -21,7 +21,6 @@ trait LogException {
                 ];
                 $logger->log($loglevel, $message, $infos);
             }
-            print_r($infos);
             parent::__construct($message, $code, $previous);
         }
     }
