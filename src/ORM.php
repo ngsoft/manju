@@ -8,7 +8,7 @@ use Manju\{
     Bun, Exceptions\ManjuException, Helpers\Cache, ORM\Bean
 };
 use Psr\{
-    Cache\CacheItemPoolInterface, Log\LoggerInterface
+    Cache\CacheItemPoolInterface, Container\ContainerInterface, Log\LoggerInterface
 };
 use RedBeanPHP\Facade;
 
@@ -17,6 +17,9 @@ define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 final class ORM extends Facade {
 
     const MANJU_VERSION = Bun::VERSION;
+
+    /** @var ContainerInterface */
+    private static $container;
 
     /** @var LoggerInterface */
     private static $psrlogger;
@@ -55,6 +58,24 @@ final class ORM extends Facade {
     }
 
     /**
+     *
+     * @return ContainerInterface|null
+     */
+    public static function getContainer(): ?ContainerInterface {
+        return self::$container;
+    }
+
+    /**
+     * Adds a PSR Container (Autoconf if logger and cache pool are set up)
+     * @param ContainerInterface $container
+     */
+    public static function setContainer(ContainerInterface $container) {
+        self::$container = $container;
+        if ($container->has(LoggerInterface::class)) $this->setLogger($container->get(LoggerInterface::class));
+        if ($container->has(CacheItemPoolInterface::class)) $this->setCachePool($container->get(CacheItemPoolInterface::class));
+    }
+
+    /**
      *  @return LoggerInterface|null
      */
     public static function getLogger(): ?LoggerInterface {
@@ -62,7 +83,6 @@ final class ORM extends Facade {
     }
 
     /**
-     *
      * @return string
      */
     public static function getLoglevel(): string {
@@ -80,7 +100,7 @@ final class ORM extends Facade {
     }
 
     /**
-     *
+     * Add a PSR Logger
      * @param LoggerInterface $psrlogger
      * @param string|null $loglevel
      */
@@ -90,7 +110,6 @@ final class ORM extends Facade {
     }
 
     /**
-     *
      * @return CacheItemPoolInterface|null
      */
     public static function getCachePool(): ?CacheItemPoolInterface {
@@ -98,7 +117,7 @@ final class ORM extends Facade {
     }
 
     /**
-     *
+     * Adds a PSR Cache Pool
      * @param CacheItemPoolInterface $cache
      * @param int $ttl
      */
