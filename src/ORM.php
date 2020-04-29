@@ -5,154 +5,96 @@ declare(strict_types=1);
 namespace Manju;
 
 use Manju\{
-    Exceptions\ManjuException, Helpers\BeanHelper, ORM\Bean
+    Bun, Exceptions\ManjuException, Helpers\Cache, ORM\Bean
 };
 use Psr\{
     Cache\CacheItemPoolInterface, Log\LoggerInterface
 };
-use RedBeanPHP\{
-    Facade, RedException
-};
-use function Manju\autoloadDir;
+use RedBeanPHP\Facade;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
-class ORM extends Facade {
+final class ORM extends Facade {
 
-    const VERSION = Bun::VERSION;
+    const MANJU_VERSION = Bun::VERSION;
 
     /** @var LoggerInterface */
-    protected static $psrlogger;
+    private static $psrlogger;
 
-    /** var array<string,mixed> */
-    protected static $config = [
-        "metacachettl" => 60 * 60 * 24,
-        "models" => [],
-        "connection" => "default",
-        "loglevel" => "debug",
-        "db" => [
-            "default" => [
-                "dsn" => null,
-                "username" => null,
-                "password" => null,
-                "frozen" => false
-            ]
-        ],
-        LoggerInterface::class => null,
-        CacheItemPoolInterface::class => null
-    ];
-    protected static $started = false;
+    /** @var string */
+    private static $loglevel = "debug";
 
-    /**
-     * Configure Manju ORM
-     * @param array<string,mixed> $config
-     */
-    public static function configure(array $config) {
-        foreach (self::$config as $k => $v) {
-            if (array_key_exists($k, $config) and gettype($v) === gettype(self::$config[$k])) {
-                self::$config[$k] = $config[$k];
-            }
-        }
-        if (isset($config["loglevel"])
-                and ( is_int($config["loglevel"]) or is_string($config["loglevel"]))
-        ) self::setLogLevel($config["loglevel"]);
-        if (isset($config[LoggerInterface::class])) self::setPsrlogger($config[LoggerInterface::class]);
-        if (isset($config[CacheItemPoolInterface::class])) self::setCachePool($config[CacheItemPoolInterface::class]);
+    /** @var CacheItemPoolInterface */
+    private static $cache;
+
+    /** @var int */
+    private static $ttl = 60 * 60 * 24;
+
+    /** @var array<string,Connection> */
+    private static $connections = [];
+
+    public static function addDatabase($key, $dsn, $user = NULL, $pass = NULL, $frozen = FALSE, $partialBeans = FALSE) {
+        $connection = new Connection([
+            "dsn" => $dsn,
+            "username" => $user,
+            "password" => $pass
+                ], $frozen, $key);
+        $this->addConnection($connection);
+
+        parent::addDatabase($key, $dsn, $user, $pass, $frozen, $partialBeans);
     }
 
     /**
-     * Starts Manju ORM
-     * @param array<string,mixed> $config
+     *  @return LoggerInterface|null
+     */
+    public static function getLogger(): ?LoggerInterface {
+        return self::$psrlogger;
+    }
+
+    /**
+     *
+     * @return string
+     */
+    public static function getLoglevel(): string {
+        return self::$loglevel;
+    }
+
+    /**
+     * Add a database connection to the ORM
+     * @param Connection $connection
      * @throws ManjuException
-     * @throws RedException
      */
-    public static function start(array $config = []) {
-        if (!self::$started) {
-            if (count($config)) self::configure($config);
-            if (empty(static::$config["models"])) throw new ManjuException("No model path set.");
-            if (!isset(self::$toolboxes["default"])) {
-                foreach (self::$config["db"] as $connection => $params) {
-                    if ($connection === "default") {
-                        self::setup(
-                                is_string($params["dsn"]) ? $params["dsn"] : null,
-                                is_string($params["username"]) ? $params["username"] : null,
-                                is_string($params["password"]) ? $params["password"] : null,
-                                is_bool($params["frozen"]) ? $params["frozen"] : false
-                        );
-                    } else {
-                        self::addDatabase(
-                                $connection,
-                                (string) $params["dsn"],
-                                $params["username"] ?? "",
-                                $params["password"] ?? null,
-                                $params["frozen"] ?? false
-                        );
-                    }
-                }
-                if (self::$config["connection"] !== "default") self::selectDatabase(self::$config["connection"]);
-            }
-            if (!self::testConnection()) throw new RedException("Cannot connect to the database, please setup your connection.");
-
-
-            //preload converters
-            autoloadDir(__DIR__ . '/Converters');
-            //preload Filters
-            autoloadDir(__DIR__ . "/Filters");
-
-            $helper = new BeanHelper(self::$config["models"], self::$config["metacachettl"]);
-            self::getRedBean()->setBeanHelper($helper);
-
-            self::$started = true;
-        }
+    public static function addConnection(Connection $connection) {
+        $name = $connection->getName();
+        if (isset(self::$connections[$name])) throw new ManjuException("Connection $name already exists.");
     }
 
     /**
-     * Set the log level
-     * @param int|string $level
-     */
-    public static function setLogLevel($level) {
-        assert(is_int($level) or is_string($level));
-        self::$config["loglevel"] = $level;
-    }
-
-    /**
-     * Get the log level
-     * @return int|string
-     */
-    public static function getLogLevel() {
-        return self::$config["loglevel"];
-    }
-
-    /**
-     * Get current declared logger
-     * @return LoggerInterface|null
-     */
-    public static function getPsrlogger(): ?LoggerInterface {
-        return self::$config[LoggerInterface::class];
-    }
-
-    /**
-     * Set the logger
+     *
      * @param LoggerInterface $psrlogger
+     * @param string|null $loglevel
      */
-    public static function setPsrlogger(LoggerInterface $psrlogger) {
-        self::$config[LoggerInterface::class] = $psrlogger;
+    public static function setLogger(LoggerInterface $psrlogger, string $loglevel = null) {
+        self::$psrlogger = $psrlogger;
+        if ($loglevel !== null) self::$loglevel = $loglevel;
     }
 
     /**
-     * get current cache pool
+     *
      * @return CacheItemPoolInterface|null
      */
     public static function getCachePool(): ?CacheItemPoolInterface {
-        return self::$config[CacheItemPoolInterface::class];
+        return self::$cache;
     }
 
     /**
-     * Set the cache pool
-     * @param CacheItemPoolInterface $pool
+     *
+     * @param CacheItemPoolInterface $cache
+     * @param int $ttl
      */
-    public static function setCachePool(CacheItemPoolInterface $pool) {
-        self::$config[CacheItemPoolInterface::class] = $pool;
+    public static function setCachePool(CacheItemPoolInterface $cache, int $ttl = null) {
+        if ($ttl !== null) self::$ttl = $ttl;
+        self::$cache = new Cache($cache, $ttl);
     }
 
 }
