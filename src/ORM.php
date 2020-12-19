@@ -122,7 +122,6 @@ final class ORM {
      */
     private static function initializeBeanHelper() {
         if (!(Facade::getRedBean()->getBeanHelper() instanceof BeanHelper)) {
-            //initialize helper
             (new BeanHelper());
         }
     }

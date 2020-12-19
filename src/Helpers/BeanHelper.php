@@ -144,6 +144,11 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             "timestamps" => false
         ];
 
+        if (!isset(self::$converters[Text::class])) {
+            self::loadConverters();
+            self::loadFilters();
+        }
+
         $filters = &self::$filters;
         $converters = &self::$converters;
 
@@ -254,12 +259,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     ///////////////////////////////// Initialisation  /////////////////////////////////
 
     public function __construct() {
-
-        if (empty(self::$converters)) {
-            self::loadConverters();
-            self::loadFilters();
-        }
-
         if (!(Facade::getRedBean()->getBeanHelper() instanceof self)) {
             Facade::getRedBean()->setBeanHelper($this);
         }
