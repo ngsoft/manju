@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Manju\ORM;
 
 use ArrayAccess,
@@ -14,7 +12,7 @@ use Manju\{
     Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Collection, ORM
 };
 use RedBeanPHP\{
-    OODBBean, SimpleModel
+    Facade, OODBBean, SimpleModel
 };
 use Throwable;
 use function Manju\toCamelCase;
@@ -24,7 +22,6 @@ use function Manju\toCamelCase;
  * @property-read int $id
  * @property-read DateTime $created_at
  * @property-read DateTime $updated_at
- * @property array<string> $tags
  */
 abstract class Model extends SimpleModel implements Countable, IteratorAggregate, ArrayAccess, JsonSerializable {
 
@@ -40,19 +37,13 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     /** @var string|null */
     public static $type;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $id = 0;
 
-    /**
-     * @var DateTime|null
-     */
+    /** @var DateTime|null */
     private $created_at;
 
-    /**
-     * @var DateTime|null
-     */
+    /** @var DateTime|null */
     private $updated_at;
 
     /**
@@ -79,202 +70,28 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         return $this->updated_at ?? new DateTime();
     }
 
-    ////////////////////////////   Tags   ////////////////////////////
+    ////////////////////////////   Utils   ////////////////////////////
 
     /**
-     * Set the tags for the current model
-     * @param string[] $tags
-     * @return static
+     * Get Model Metadatas
+     * @param string|null $key
+     * @return mixed
      */
-    public function setTags(array $tags) {
-        $this->bean or static::create($this);
-        if (
-                count($tags) > 0
-                and $this->id > 0
-        ) {
-            $newtags = [];
-            foreach ($tags as $tag) {
-                if (!is_string($tag)) throw new ValidationError("Invalid tag type: not a string, " . gettype($tag)) . " given";
-                $newtags[] = $tag;
-            }
-            ORM::tag($this->bean, $newtags);
-        }
-        return $this;
+    public function getMeta(string $key = null) {
+        $meta = BeanHelper::$metadatas[get_class($this)];
+        if ($key === null) return $meta;
+        return $meta->{$key} ?? null;
     }
 
     /**
-     * Get the affected to the current model
-     * @return array<string>
+     * Get Metadata Bean Type
+     * @return string|null
      */
-    public function getTags() {
-        $this->bean or static::create($this);
-        $result = [];
-        if ($this->id > 0) {
-            foreach ($this->bean->sharedTag as $bean) {
-                $result[] = $bean->title;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Adds the given tags to the current model
-     * @param string ...$tags
-     * @return static
-     */
-    public function addTags(string ...$tags) {
-        $this->bean or static::create($this);
-        if (count($tags) and $this->id > 0) {
-            ORM::addTags($this->bean, $tags);
-        }
-        return $this;
-    }
-
-    /**
-     * Removes the given tags from the current model
-     * @param string ...$tags
-     * @return static
-     */
-    public function removeTags(string ...$tags) {
-        $this->bean or static::create($this);
-        if (count($tags) && $this->id > 0) {
-            ORM::untag($this->bean, $tags);
-        }
-        return $this;
-    }
-
-    /**
-     * Checks if current model has given tags
-     * @param string ...$tags
-     * @return bool
-     */
-    public function hasTags(string ...$tags): bool {
-        $this->bean or static::create($this);
-        if (count($tags) and $this->id > 0) {
-            $otags = $this->getTags();
-            foreach ($tags as $tag) {
-                if (!in_array($tag, $otags)) return false;
-            }
-        } else return false;
-        return true;
-    }
-
-    /**
-     * Removes all tags from current model
-     * @return static
-     */
-    public function clearTags() {
-        $this->bean or static::create($this);
-        if ($this->id > 0) ORM::getRedBean()->getAssociationManager()->clearRelations($this->bean, 'tag');
-        return $this;
-    }
-
-    ////////////////////////////   SQL Helpers   ////////////////////////////
-
-    /**
-     * Find models that contains at least one of the given tags
-     * @param array<string> $tags
-     * @param string $sql
-     * @param array $bindings
-     * @return static[]
-     */
-    public static function findTagged(array $tags, string $sql = "", array $bindings = []) {
-        $result = [];
-        if (
-                count($tags)
-                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
-        ) {
-
-            foreach (ORM::tagged($type, $tags, $sql, $bindings) as $bean) {
-                $result[] = $bean->box();
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Find models that contains all of the given tags
-     * @param array<string> $tags
-     * @param string $sql
-     * @param array $bindings
-     * @return static[]
-     */
-    public static function findTaggedAll(array $tags, string $sql = "", array $bindings = []) {
-        $result = [];
-        if (
-                count($tags)
-                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
-        ) {
-
-            foreach (ORM::taggedAll($type, $tags, $sql, $bindings) as $bean) {
-                $result[] = $bean->box();
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Count models that contains all of the given tags
-     * @param array<string> $tags
-     * @param string $sql
-     * @param array $bindings
-     * @return int
-     */
-    public static function countTaggedAll(array $tags, string $sql = "", array $bindings = []): int {
-        $result = 0;
-        if (
-                count($tags)
-                and ( $type = BeanHelper::$metadatas[static::class]->type ?? null)
-        ) {
-
-            $result = ORM::countTaggedAll($type, $tags, $sql, $bindings);
-        }
-        return $result;
-    }
-
-    /**
-     * Finds entries using an optional SQL statement
-     * Unlike RedBean finder it doesn't use the bean ID as key (but keep the same order)
-     * Great to extract data using array_map() for example
-     *
-     * @param string|null $sql SQL query to find the desired bean, starting right after WHERE clause
-     * @param array $bindings array of values to be bound to parameters in query
-     * @return static[]
-     */
-    public static function find(string $sql = null, array $bindings = []) {
-        $result = [];
-        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            foreach (ORM::find($type, $sql, $bindings) as $bean) {
-                $result[] = $bean->box();
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Returns the first entry
-     * @param string $sql SQL query to find the desired entry, starting right after WHERE clause
-     * @param array $bindings array of values to be bound to parameters in query
-     * @return static|null
-     */
-    public static function findOne(string $sql = "", array $bindings = []) {
-        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            if ($result = ORM::findOne($type, $sql, $bindings)) return $result->box();
+    public static function getType(): ?string {
+        if ($meta = BeanHelper::$metadatas[static::class] ?? null) {
+            return $meta->type;
         }
         return null;
-    }
-
-    /**
-     * Count the number of entries of current Model
-     * @param string $sql additional SQL snippet
-     * @param array $bindings parameters to bind to SQL
-     * @return int
-     */
-    public static function countEntries(string $sql = "", array $bindings = []): int {
-        if (($type = BeanHelper::$metadatas[static::class]->type ?? null)) {
-            return ORM::count($type, $sql, $bindings);
-        }
-        return 0;
     }
 
     ////////////////////////////   CRUD   ////////////////////////////
@@ -302,7 +119,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
             BeanHelper::dispenseFor($model);
             return $model;
         }
-        return self::load();
+        return static::load();
     }
 
     /**
@@ -328,7 +145,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function trash(): void {
         if ($this->bean instanceof OODBBean) {
-            ORM::trash($this->bean);
+            Facade::trash($this->bean);
         }
     }
 
@@ -341,7 +158,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                 ($this->bean instanceof OODBBean)
                 and $this->bean->id > 0
         ) {
-            return ORM::load($this->getMeta("type"), $this->bean->id)->box();
+            return Facade::load($this->getMeta("type"), $this->bean->id)->box();
         }
         return $this;
     }
@@ -357,7 +174,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         if ($this->bean instanceof OODBBean) {
             $this->bean->setMeta("tainted", true);
             try {
-                $id = (int) ORM::store($this->bean);
+                $id = (int) Facade::store($this->bean);
             } catch (Throwable $exc) {
                 if ($throws_validation_error === true) throw $exc;
             }
@@ -365,18 +182,51 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         return $id;
     }
 
-    ////////////////////////////   MetaDatas   ////////////////////////////
+    ////////////////////////////   SQL Helpers   ////////////////////////////
 
     /**
-     * Get Model Metadatas
+     * Finds entries using an optional SQL statement
+     * Unlike RedBean finder it doesn't use the bean ID as key (but keep the same order)
+     * Great to extract data using array_map() for example
      *
-     * @param string|null $key
-     * @return mixed
+     * @param string|null $sql SQL query to find the desired bean, starting right after WHERE clause
+     * @param array $bindings array of values to be bound to parameters in query
+     * @return static[]
      */
-    public function getMeta(string $key = null) {
-        $meta = BeanHelper::$metadatas[get_class($this)];
-        if ($key === null) return $meta;
-        return $meta->{$key} ?? null;
+    public static function find(string $sql = null, array $bindings = []) {
+        $result = [];
+        if ($type = static::getType()) {
+            foreach (Facade::find($type, $sql, $bindings) as $bean) {
+                $result[] = $bean->box();
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Returns the first entry
+     * @param string $sql SQL query to find the desired entry, starting right after WHERE clause
+     * @param array $bindings array of values to be bound to parameters in query
+     * @return static|null
+     */
+    public static function findOne(string $sql = "", array $bindings = []) {
+        if ($type = static::getType()) {
+            if ($result = Facade::findOne($type, $sql, $bindings)) return $result->box();
+        }
+        return null;
+    }
+
+    /**
+     * Count the number of entries of current Model
+     * @param string $sql additional SQL snippet
+     * @param array $bindings parameters to bind to SQL
+     * @return int
+     */
+    public static function countEntries(string $sql = "", array $bindings = []): int {
+        if ($type = static::getType()) {
+            return Facade::count($type, $sql, $bindings);
+        }
+        return 0;
     }
 
     ////////////////////////////   Basic Relations   ////////////////////////////
@@ -388,7 +238,6 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     private function getModelType($model) {
         if ($model instanceof Model) {
-
             return $model->getMeta("type");
         } elseif (
                 is_string($model) and class_exists($model)
@@ -512,7 +361,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @return static
      */
     public static function __set_state(array $array) {
-        $i = self::load();
+        $i = static::load();
         foreach ($array as $k => $v) {
             $i->offsetSet($k, $v);
         }
@@ -571,7 +420,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         return $this->toArray();
     }
 
-    ////////////////////////////   __magic_methods   ////////////////////////////
+    ////////////////////////////   Magics   ////////////////////////////
 
     /** {@inheritdoc} */
     public function &__get($prop) {
@@ -633,7 +482,6 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                     $this->{$prop} = $value;
                 }
             }
-            if (count($meta->unique)) $b->setMeta("sys.uniques", $meta->unique);
         }
     }
 
@@ -649,6 +497,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
             foreach ($meta->required as $prop) {
                 if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
             }
+
             foreach ($meta->converters as $prop => $converter) {
                 if ($this->{$prop} === null) continue;
                 if (!$converter::isValid($this->{$prop})) {
@@ -664,6 +513,15 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                         and ( false === $this->validateModel($prop, $this->{$prop}))
                 ) {
                     throw new ValidationError(get_class($this) . "::validateModel($prop, ...) failed the validation test.");
+                }
+            }
+
+            foreach ($meta->unique as $prop) {
+                $current = $this->bean->{$prop};
+                if ($current != null and $model = static::findOne('? = ?', [$prop, $current])) {
+                    if ($this->id != $model->id) {
+                        throw new ValidationError(get_class($this) . '::$' . $prop . " Unique Value $current already exists.");
+                    }
                 }
             }
         }

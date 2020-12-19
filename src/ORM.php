@@ -16,7 +16,7 @@ define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
 final class ORM {
 
-    const VERSION = '3.0.beta1';
+    const VERSION = '3.0';
     const LOGLEVEL = 'debug';
     const CACHE_TTL = 60 * 60 * 24;
 
