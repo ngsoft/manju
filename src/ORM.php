@@ -104,6 +104,7 @@ final class ORM {
      * @param string ...$paths
      */
     public static function addModelPath(string ...$paths) {
+        self::initializeBeanHelper();
         BeanHelper::addSearchPath(...$paths);
     }
 
@@ -112,7 +113,18 @@ final class ORM {
      * @param Model $model
      */
     public function addModel(Model $model) {
+        self::initializeBeanHelper();
         return BeanHelper::addModel($model);
+    }
+
+    /**
+     * Initialize Bean Helper
+     */
+    private static function initializeBeanHelper() {
+        if (!(Facade::getRedBean()->getBeanHelper() instanceof BeanHelper)) {
+            //initialize helper
+            (new BeanHelper());
+        }
     }
 
     ///////////////////////////////// Initialisation  /////////////////////////////////
@@ -128,8 +140,7 @@ final class ORM {
         if ($started != true) {
             if ($connection instanceof Connection) self::addConnection($connection, true);
             elseif (count(self::$connections) == 0) throw new ManjuException("Cannot start ORM, No connections defined");
-            //initialize helper
-            (new BeanHelper());
+            self::initializeBeanHelper();
             $started = true;
         }
         if (is_string($searchpath)) self::addModelPath($searchpath);

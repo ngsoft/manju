@@ -493,16 +493,19 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @throws ValidationError Prevents Redbeans from Writing wrong datas
      */
     public function _validate() {
+
+        $classname = get_class($this);
+
         if ($meta = $this->getMeta()) {
             foreach ($meta->required as $prop) {
-                if ($this->{$prop} === null) throw new ValidationError(get_class($this) . '::$' . $prop . " Cannot be NULL");
+                if ($this->{$prop} === null) throw new ValidationError($classname . '::$' . $prop . " Cannot be NULL");
             }
 
             foreach ($meta->converters as $prop => $converter) {
                 if ($this->{$prop} === null) continue;
                 if (!$converter::isValid($this->{$prop})) {
                     throw new ValidationError(
-                            get_class($this) . '::$' . $prop . " Invalid Type " .
+                            $classname . '::$' . $prop . " Invalid Type " .
                             $converter::getTypes()[0] . " requested but " .
                             gettype($this->{$prop}) . " given."
                     );
@@ -512,16 +515,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                         method_exists($this, "validateModel")
                         and ( false === $this->validateModel($prop, $this->{$prop}))
                 ) {
-                    throw new ValidationError(get_class($this) . "::validateModel($prop, ...) failed the validation test.");
-                }
-            }
-
-            foreach ($meta->unique as $prop) {
-                $current = $this->bean->{$prop};
-                if ($current != null and $model = static::findOne('? = ?', [$prop, $current])) {
-                    if ($this->id != $model->id) {
-                        throw new ValidationError(get_class($this) . '::$' . $prop . " Unique Value $current already exists.");
-                    }
+                    throw new ValidationError($classname . "::validateModel($prop, ...) failed the validation test.");
                 }
             }
         }
@@ -531,8 +525,12 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Write datas to bean
      * @suppress PhanAccessReadOnlyMagicProperty
      * @internal
+     * @throws ValidationError Prevents Redbeans from Writing wrong datas
      */
     public function _update() {
+        $classname = get_class($this);
+        $unique = $this->getMeta('unique');
+
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
             if ($meta->timestamps === true) {
@@ -544,6 +542,14 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                 if ($prop === "id") continue;
                 $value = $converter::convertToBean($this->{$prop});
                 $this->bean->{$prop} = $value;
+                //checks unique value
+                if (in_array($prop, $unique)) {
+                    if ($model = $classname::findOne('? = ?', [$prop, $value])) {
+                        if ($this->id != $model->id) {
+                            throw new ValidationError($classname . '::$' . $prop . " Unique Value $current already exists.");
+                        }
+                    }
+                }
             }
         }
     }

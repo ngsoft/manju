@@ -114,6 +114,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         if (isset(self::$metadatas[$classname])) return;
         $refl = new ReflectionClass($model);
         $cache = ORM::getCachePool();
+        $cache = null;
         $item = null;
         //loads from cache
         if ($cache instanceof CacheItemPoolInterface) {
@@ -166,9 +167,8 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             if (
                     ($prop->class !== Model::class )
                     and ( $prop->class !== SimpleModel::class )
-                    and $prop->isProtected()
-                    and!$prop->isPrivate()
                     and!$prop->isStatic()
+                    and ($prop->isProtected() or $prop->isPrivate())
             ) {
                 $meta["properties"][] = $prop->name;
                 $meta["converters"][$prop->name] = Text::class;
@@ -225,6 +225,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         self::$metadatas[$classname] = array_to_object($meta);
+        var_dump(self::$metadatas[$classname]);
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////
@@ -253,11 +254,13 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     ///////////////////////////////// Initialisation  /////////////////////////////////
 
     public function __construct() {
+
         if (empty(self::$converters)) {
             self::loadConverters();
             self::loadFilters();
         }
-        if (Facade::getRedBean()->getBeanHelper() !== $this) {
+
+        if (!(Facade::getRedBean()->getBeanHelper() instanceof self)) {
             Facade::getRedBean()->setBeanHelper($this);
         }
     }
