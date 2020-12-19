@@ -543,10 +543,10 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
                 $value = $converter::convertToBean($this->{$prop});
                 $this->bean->{$prop} = $value;
                 //checks unique value
-                if (in_array($prop, $unique)) {
-                    if ($model = $classname::findOne('? = ?', [$prop, $value])) {
+                if (in_array($prop, $unique) and!empty($value)) {
+                    if ($model = $classname::findOne(sprintf('%s = ?', $prop), [$value])) {
                         if ($this->id != $model->id) {
-                            throw new ValidationError($classname . '::$' . $prop . " Unique Value $current already exists.");
+                            throw new ValidationError($classname . '::$' . $prop . " unique value " . $value . " already exists.");
                         }
                     }
                 }
