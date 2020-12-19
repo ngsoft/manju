@@ -104,7 +104,6 @@ final class ORM {
      * @param string ...$paths
      */
     public static function addModelPath(string ...$paths) {
-        self::initializeBeanHelper();
         BeanHelper::addSearchPath(...$paths);
     }
 
@@ -113,7 +112,6 @@ final class ORM {
      * @param Model $model
      */
     public function addModel(Model $model) {
-        self::initializeBeanHelper();
         return BeanHelper::addModel($model);
     }
 

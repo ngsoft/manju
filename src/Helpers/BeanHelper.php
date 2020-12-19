@@ -114,7 +114,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         if (isset(self::$metadatas[$classname])) return;
         $refl = new ReflectionClass($model);
         $cache = ORM::getCachePool();
-        $cache = null;
         $item = null;
         //loads from cache
         if ($cache instanceof CacheItemPoolInterface) {
@@ -230,7 +229,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         self::$metadatas[$classname] = array_to_object($meta);
-        var_dump(self::$metadatas[$classname]);
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////
