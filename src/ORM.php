@@ -3,11 +3,12 @@
 namespace Manju;
 
 use Manju\{
-    Helpers\Cache, ORM\Bean
+    Exceptions\ManjuException, Helpers\Cache, ORM\Bean
 };
 use Psr\{
     Cache\CacheItemPoolInterface, Container\ContainerInterface, Log\LoggerInterface
 };
+use RedBeanPHP\Facade;
 
 define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
@@ -25,6 +26,9 @@ final class ORM {
 
     /** @var CacheItemPoolInterface */
     private static $cache;
+
+    /** @var Connection[] */
+    private static $connections;
 
     /** @return ContainerInterface|null */
     public static function getContainer(): ?ContainerInterface {
@@ -47,6 +51,13 @@ final class ORM {
      */
     public static function setContainer(ContainerInterface $container) {
         self::$container = $container;
+
+        if ($container->has(LoggerInterface::class)) self::setLogger($container->get(LoggerInterface::class));
+        if ($container->has(CacheItemPoolInterface::class)) self::setCachePool($container->get(CacheItemPoolInterface::class));
+        if ($container->has(Connection::class)) {
+            $connection = $container->get(Connection::class);
+            self::addConnection($connection, true);
+        }
     }
 
     /**
@@ -65,6 +76,34 @@ final class ORM {
      */
     public static function setCachePool(CacheItemPoolInterface $cache, int $ttl = self::CACHE_TTL) {
         self::$cache = new Cache($cache, $ttl);
+    }
+
+    ///////////////////////////////// Connection Manager  /////////////////////////////////
+
+    /**
+     * Add a database connection to the ORM
+     * @param Connection $connection
+     * @param bool $selected Select the connection added.
+     * @throws ManjuException
+     * @suppress PhanTypeMismatchArgumentNullable
+     */
+    public static function addConnection(Connection $connection, bool $selected = false) {
+
+        $name = $connection->getName();
+        if (isset(Facade::$toolboxes[$name])) throw new ManjuException("Connection $name already exists.");
+        if (!$connection->getDSN()) throw new ManjuException("No DSN provided for $name connection.");
+
+        if (!in_array($connection, self::$connections)) {
+            self::$connections[] = $connection;
+        }
+
+
+
+        Facade::addDatabase($name, $connection->getDSN(), $connection->getUsername(), $connection->getPassword());
+        if ($selected == true) {
+            Facade::selectDatabase($name, true);
+            if (Facade:: testConnection() === false) throw new ManjuException("Cannot connect to database on connection $name");
+        }
     }
 
     ///////////////////////////////// Redbean Proxy  /////////////////////////////////

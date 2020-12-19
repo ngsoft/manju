@@ -2,6 +2,11 @@
 
 namespace Manju;
 
+use Manju\Exceptions\ManjuException;
+use RedBeanPHP\{
+    Facade, ToolBox
+};
+
 class Connection {
 
     /** @var string */
@@ -84,6 +89,44 @@ class Connection {
     /** @return string|null */
     public function getPassword(): ?string {
         return $this->password;
+    }
+
+    /**
+     * Adds Connection to RedBeanPHP
+     * @internal
+     * @return bool
+     */
+    public function addToRedBean() {
+        $name = $this->getName();
+        if (!isset(Facade::$toolboxes[$name])) {
+            if (!$this->getDSN()) throw new ManjuException("No DSN provided for $name connection.");
+            Facade::addDatabase($name, $this->getDSN(), $this->getUsername(), $this->getPassword());
+        }
+        return isset(Facade::$toolboxes[$name]);
+    }
+
+    /**
+     * Set Connection as active into RedBean
+     * @return boolean
+     * @throws ManjuException
+     */
+    public function setActive() {
+        if (!isset(Facade::$toolboxes[$this->getName()])) ORM::addConnection($this);
+        if (Facade::selectDatabase($this->getName(), true)) {
+            if (Facade:: testConnection() === false) {
+                throw new ManjuException("Cannot connect to database on connection " . $this->getName());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get RedBean Toolbox for this Connection
+     * @return ToolBox|null
+     */
+    public function getToolbox(): ?ToolBox {
+        return Facade::$toolboxes[$this->getName()] ?? null;
     }
 
 }
