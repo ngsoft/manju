@@ -3,7 +3,7 @@
 namespace Manju;
 
 use Manju\{
-    Exceptions\ManjuException, Helpers\Cache, ORM\Bean
+    Exceptions\ManjuException, Helpers\BeanHelper, Helpers\Cache, ORM\Bean, ORM\Model
 };
 use Psr\{
     Cache\CacheItemPoolInterface, Container\ContainerInterface, Log\LoggerInterface
@@ -18,17 +18,17 @@ final class ORM {
     const LOGLEVEL = 'debug';
     const CACHE_TTL = 60 * 60 * 24;
 
-    /** @var ContainerInterface */
+    /** @var ContainerInterface|null */
     private static $container;
 
-    /** @var LoggerInterface */
+    /** @var LoggerInterface|null */
     private static $logger;
 
-    /** @var CacheItemPoolInterface */
+    /** @var CacheItemPoolInterface|null */
     private static $cache;
 
     /** @var array<string,Connection> */
-    private static $connections;
+    private static $connections = [];
 
     /** @return ContainerInterface|null */
     public static function getContainer(): ?ContainerInterface {
@@ -97,4 +97,42 @@ final class ORM {
     }
 
     ///////////////////////////////// Model Manager  /////////////////////////////////
+
+    /**
+     * Adds Path to Classes implementing Model
+     * @param string ...$paths
+     */
+    public static function addModelPath(string ...$paths) {
+        BeanHelper::addSearchPath(...$paths);
+    }
+
+    /**
+     * Adds a single Model
+     * @param Model $model
+     * @return bool
+     */
+    public function addModel(Model $model): bool {
+        return BeanHelper::addModel($model);
+    }
+
+    ///////////////////////////////// Initialisation  /////////////////////////////////
+
+    /**
+     * Starts the ORM
+     * @staticvar type $started
+     * @param Connection|null $connection Connection to use
+     * @param string|null $searchpath Path to Models
+     */
+    public static function start(?string $searchpath = null, ?Connection $connection = null) {
+        static $started;
+        if ($started != true) {
+            if ($connection instanceof Connection) self::addConnection($connection, true);
+            elseif (count(self::$connections) == 0) throw new ManjuException("Cannot start ORM, No connections defined");
+            //initialize helper
+            (new BeanHelper());
+            $started = true;
+        }
+        if (count($searchpaths) > 0) self::addModelPath(...$searchpaths);
+    }
+
 }
