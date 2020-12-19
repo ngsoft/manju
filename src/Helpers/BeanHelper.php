@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Manju\Helpers;
 
 use Manju\{
-    Bun, Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model,
-    Reflection\Parser
+    Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
 };
 use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
@@ -204,7 +203,7 @@ class BeanHelper extends SimpleFacadeBeanHelper {
         if ($annotations = $parser->ParseAll($refl)) {
             //parse only extended Models, not base models annotations
             $annotations = array_filter($annotations, function ($ann) {
-                return !in_array($ann->reflector->class ?? "", [Model::class, SimpleModel::class, Bun::class]);
+                return !in_array($ann->reflector->class ?? "", [Model::class, SimpleModel::class]);
             });
             /**
              * @var string

@@ -13,7 +13,6 @@
 
         "psr/log": "*",
         "psr/cache": "*",
-        "wixel/gump": "*",
         "psr/container": "^1.0"
     },
     "require": {

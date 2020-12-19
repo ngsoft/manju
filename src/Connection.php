@@ -2,8 +2,6 @@
 
 namespace Manju;
 
-use Manju\Exceptions\ManjuException;
-
 class Connection {
 
     /** @var string */
@@ -18,40 +16,74 @@ class Connection {
     /** @var string|null */
     private $password;
 
-    /** @var bool */
-    private $frozen;
-
     public function __construct(
-            iterable $config = [],
-            bool $frozen = false,
-            string $name = null
+            iterable $config = []
     ) {
-        if ($name !== null) $this->name = $name;
-        $this->dsn = $config["dsn"] ?? null;
-        $this->username = $config["username"] ?? $config["user"] ?? null;
-        $this->password = $config["password"] ?? $config["pass"] ?? null;
-        $this->frozen = $frozen;
-        if (empty($this->dsn)) throw new ManjuException("Invalid Connection, no dsn is supplied.");
+        foreach (['name', 'dsn', 'username', 'password'] as $param) {
+            if (array_key_exists($param, $config)) {
+                $this->{$param} = $config[$param];
+            }
+        }
     }
 
-    public function getName(): string {
+    /**
+     * Set Connection Name
+     * @param string $name
+     * @return static
+     */
+    public function setName(string $name) {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * Set DB DSN
+     * @param string $dsn
+     * @return static
+     */
+    public function setDsn(string $dsn) {
+        $this->dsn = $dsn;
+        return $this;
+    }
+
+    /**
+     * Set DB Username
+     * @param string $username
+     * @return static
+     */
+    public function setUsername(string $username) {
+        $this->username = $username;
+        return $this;
+    }
+
+    /**
+     * Set DB Password
+     * @param string $password
+     * @return static
+     */
+    public function setPassword(string $password) {
+        $this->password = $password;
+        return $this;
+    }
+
+    /** @return string|null */
+    public function getName(): ?string {
         return $this->name;
     }
 
-    public function getDSN(): string {
+    /** @return string|null */
+    public function getDSN(): ?string {
         return $this->dsn;
     }
 
+    /** @return string|null */
     public function getUsername(): ?string {
         return $this->username;
     }
 
+    /** @return string|null */
     public function getPassword(): ?string {
         return $this->password;
-    }
-
-    public function getFrozen(): bool {
-        return $this->frozen;
     }
 
 }

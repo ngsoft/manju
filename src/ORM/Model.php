@@ -30,6 +30,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     ////////////////////////////   CONSTANTS   ////////////////////////////
 
+    const VERSION = ORM::VERSION;
     const VALID_BEAN = '/^[a-z][a-z0-9]+$/';
     const VALID_PARAM = '/^[a-zA-Z]\w+$/';
     const TO_MANY_LIST = '/^(shared|own|xown)([A-Z][a-z0-9]+)List$/';
