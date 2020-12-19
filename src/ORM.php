@@ -27,7 +27,7 @@ final class ORM {
     /** @var CacheItemPoolInterface */
     private static $cache;
 
-    /** @var Connection[] */
+    /** @var array<string,Connection> */
     private static $connections;
 
     /** @return ContainerInterface|null */
@@ -88,25 +88,13 @@ final class ORM {
      * @suppress PhanTypeMismatchArgumentNullable
      */
     public static function addConnection(Connection $connection, bool $selected = false) {
-
         $name = $connection->getName();
-        if (isset(Facade::$toolboxes[$name])) throw new ManjuException("Connection $name already exists.");
-        if (!$connection->getDSN()) throw new ManjuException("No DSN provided for $name connection.");
-
         if (!in_array($connection, self::$connections)) {
-            self::$connections[] = $connection;
+            self::$connections[$name] = $connection;
         }
-
-
-
-        Facade::addDatabase($name, $connection->getDSN(), $connection->getUsername(), $connection->getPassword());
-        if ($selected == true) {
-            Facade::selectDatabase($name, true);
-            if (Facade:: testConnection() === false) throw new ManjuException("Cannot connect to database on connection $name");
-        }
+        if (isset(Facade::$toolboxes[$name])) throw new ManjuException("Connection $name already exists.");
+        if ($connection->addToRedBean() and $selected) $connection->setActive();
     }
 
-    ///////////////////////////////// Redbean Proxy  /////////////////////////////////
-    // load, dispense, save, tag, addTags, untag, tagged, taggedAll, countTaggedAll getRedBean
-    // find, findOne, trash, store
+    ///////////////////////////////// Model Manager  /////////////////////////////////
 }
