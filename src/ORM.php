@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju;
 
 use Manju\{
@@ -14,7 +16,7 @@ define('REDBEAN_OODBBEAN_CLASS', Bean::class);
 
 final class ORM {
 
-    const VERSION = '3.0';
+    const VERSION = '3.0.beta1';
     const LOGLEVEL = 'debug';
     const CACHE_TTL = 60 * 60 * 24;
 
@@ -62,8 +64,7 @@ final class ORM {
 
     /**
      * Add a PSR Logger
-     * @param LoggerInterface $psrlogger
-     * @param string|null $loglevel
+     * @param LoggerInterface $logger
      */
     public static function setLogger(LoggerInterface $logger) {
         self::$logger = $logger;
@@ -109,9 +110,8 @@ final class ORM {
     /**
      * Adds a single Model
      * @param Model $model
-     * @return bool
      */
-    public function addModel(Model $model): bool {
+    public function addModel(Model $model) {
         return BeanHelper::addModel($model);
     }
 
@@ -120,8 +120,8 @@ final class ORM {
     /**
      * Starts the ORM
      * @staticvar type $started
-     * @param Connection|null $connection Connection to use
      * @param string|null $searchpath Path to Models
+     * @param Connection|null $connection Connection to use
      */
     public static function start(?string $searchpath = null, ?Connection $connection = null) {
         static $started;
@@ -132,7 +132,7 @@ final class ORM {
             (new BeanHelper());
             $started = true;
         }
-        if (count($searchpaths) > 0) self::addModelPath(...$searchpaths);
+        if (is_string($searchpath)) self::addModelPath($searchpath);
     }
 
 }

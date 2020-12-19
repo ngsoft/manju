@@ -25,7 +25,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var array<string,string> */
     protected static $models = [];
 
-    /** @var array<string,Converter> */
+    /** @var array<string,string> */
     public static $converters = [];
 
     /** @var AnnotationFilter[] */
@@ -39,7 +39,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
 
     /**
      * Loads Converters
-     * @param string $path Path to class implementing Converter
+     * @param string|null $path Path to class implementing Converter
      */
     public static function loadConverters(string $path = null) {
         $path = $path ?? dirname(__DIR__) . '/Converters';
@@ -55,7 +55,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
 
     /**
      * Loads AnnotationFilter
-     * @param string $path Path to class implementing AnnotationFilter
+     * @param string|null $path Path to class implementing AnnotationFilter
      */
     public static function loadFilters(string $path = null) {
         $path = $path ?? dirname(__DIR__) . '/Filters';
@@ -68,9 +68,9 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
 
     /**
      * Adds a Model Search Path
-     * @param string ...$path
+     * @param string ...$paths
      */
-    public function addSearchPath(string ...$paths) {
+    public static function addSearchPath(string ...$paths) {
 
         foreach ($paths as $path) {
             $real = realpath($path);
@@ -143,6 +143,8 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             "timestamps" => false
         ];
 
+        $filters = &self::$filters;
+        $converters = &self::$converters;
 
 
         //set type(table) (without annotations)
