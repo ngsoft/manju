@@ -9,6 +9,16 @@ use Manju\{
 class Type extends AnnotationFilterAbstract {
 
     /** {@inheritdoc} */
+    public function getDefaultValue() {
+        return null;
+    }
+
+    /** {@inheritdoc} */
+    public function getKey(): string {
+        return 'type';
+    }
+
+    /** {@inheritdoc} */
     public $types = ["CLASS"];
 
     /** {@inheritdoc} */

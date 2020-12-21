@@ -18,4 +18,14 @@ class Timestamps extends AnnotationFilterAbstract {
         $meta["timestamps"] = $annotation->value !== false;
     }
 
+    /** {@inheritdoc} */
+    public function getDefaultValue() {
+        return false;
+    }
+
+    /** {@inheritdoc} */
+    public function getKey(): string {
+        return 'timestamps';
+    }
+
 }

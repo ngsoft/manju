@@ -22,27 +22,12 @@ class Connection {
     /** @var string|null */
     private $password;
 
-    /** @var array<string,mixed> */
-    private $settings = [
-        'cache' => true,
-        'logs' => true,
-    ];
-
     public function __construct(
             iterable $config = []
     ) {
         foreach (['name', 'dsn', 'username', 'password'] as $param) {
             if (array_key_exists($param, $config)) {
                 $this->{$param} = $config[$param];
-            }
-        }
-
-        if (
-                isset($config['settings'])
-                and is_iterable($config['settings'])
-        ) {
-            foreach ($config['settings'] as $key => $value) {
-                $this->settings[$key] = $value;
             }
         }
     }

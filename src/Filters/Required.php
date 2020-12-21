@@ -30,4 +30,14 @@ class Required extends AnnotationFilterAbstract {
         $meta["required"] = array_merge($meta["required"], $props);
     }
 
+    /** {@inheritdoc} */
+    public function getDefaultValue() {
+        return [];
+    }
+
+    /** {@inheritdoc} */
+    public function getKey(): string {
+        return 'required';
+    }
+
 }

@@ -30,4 +30,14 @@ class Ignore extends AnnotationFilterAbstract {
         $meta["ignore"] = array_merge($meta["ignore"], $props);
     }
 
+    /** {@inheritdoc} */
+    public function getDefaultValue() {
+        return [];
+    }
+
+    /** {@inheritdoc} */
+    public function getKey(): string {
+        return 'ignore';
+    }
+
 }

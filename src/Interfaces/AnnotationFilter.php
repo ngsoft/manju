@@ -13,6 +13,11 @@ interface AnnotationFilter {
     public function getKey(): string;
 
     /**
+     * @return mixed
+     */
+    public function getDefaultValue();
+
+    /**
      * Process Annotation list
      * @param Annotation[] $data
      * @param array $meta

@@ -27,4 +27,14 @@ class Unique extends AnnotationFilterAbstract {
         $meta["unique"] = array_merge($meta["unique"], $props);
     }
 
+    /** {@inheritdoc} */
+    public function getDefaultValue() {
+        return [];
+    }
+
+    /** {@inheritdoc} */
+    public function getKey(): string {
+        return "unique";
+    }
+
 }

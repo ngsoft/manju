@@ -16,20 +16,12 @@ abstract class AnnotationFilterAbstract implements AnnotationFilter {
     /** @var array<string> */
     public $tags = [];
 
-    /** @var string|null */
-    public $key = null;
-
     /**
      * Handles a single annotation
      * @param Annotation $annotation
      * @param array $meta
      */
     abstract public function handle(Annotation $annotation, array &$meta);
-
-    public function getKey(): string {
-        if (!is_string($this->key)) throw new InvalidProperty(get_class($this) . '::$key is not set.');
-        return $this->key;
-    }
 
     /** {@inheritdoc} */
     public function process(array $data, array &$meta) {
