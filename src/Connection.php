@@ -2,7 +2,8 @@
 
 namespace Manju;
 
-use Manju\Exceptions\ManjuException;
+use Manju\Exceptions\ManjuException,
+    Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\{
     Facade, ToolBox
 };
@@ -21,12 +22,27 @@ class Connection {
     /** @var string|null */
     private $password;
 
+    /** @var array<string,mixed> */
+    private $settings = [
+        'cache' => true,
+        'logs' => true,
+    ];
+
     public function __construct(
             iterable $config = []
     ) {
         foreach (['name', 'dsn', 'username', 'password'] as $param) {
             if (array_key_exists($param, $config)) {
                 $this->{$param} = $config[$param];
+            }
+        }
+
+        if (
+                isset($config['settings'])
+                and is_iterable($config['settings'])
+        ) {
+            foreach ($config['settings'] as $key => $value) {
+                $this->settings[$key] = $value;
             }
         }
     }
@@ -71,8 +87,8 @@ class Connection {
         return $this;
     }
 
-    /** @return string|null */
-    public function getName(): ?string {
+    /** @return string */
+    public function getName(): string {
         return $this->name;
     }
 
@@ -119,6 +135,10 @@ class Connection {
             return true;
         }
         return false;
+    }
+
+    public function isActive(): bool {
+        return Facade::$currentDB == $this->name;
     }
 
     /**

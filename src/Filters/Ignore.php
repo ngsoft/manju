@@ -17,11 +17,11 @@ class Ignore extends AnnotationFilterAbstract {
 
     /** {@inheritdoc} */
     public function handle(Annotation $annotation, array &$meta) {
-        /** @required (param1, param2) */
+        /** @ignore (param1, param2) */
         if ($annotation->annotationType === "CLASS") $props = (array) $annotation->value;
-        /** @required */
+        /** @ignore */
         elseif ($annotation->value !== false) $props = (array) $annotation->attributeName;
-        /** @required false */
+        /** @ignore false */
         else $props = [];
         $props = array_filter($props, function ($prop) use($meta) {
             return in_array($prop, $meta["properties"]) and preg_match(Model::VALID_PARAM, $prop) > 0;

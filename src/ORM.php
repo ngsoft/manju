@@ -97,6 +97,19 @@ final class ORM {
         if ($connection->addToRedBean() and $selected) $connection->setActive();
     }
 
+    /**
+     * Get Currently active connection
+     * @return Connection|null
+     */
+    public static function getActiveConnection(): ?Connection {
+        if (
+                !empty(Facade::$currentDB)
+                and isset(self::$connections[Facade::$currentDB])
+        ) {
+            return self::$connections[Facade::$currentDB];
+        }
+    }
+
     ///////////////////////////////// Model Manager  /////////////////////////////////
 
     /**
