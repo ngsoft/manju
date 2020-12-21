@@ -143,6 +143,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
                 $converter = $meta->converters->{$prop} ?? null;
                 if (
                         isset($converter)
+                        and ($value != null)
                         and!$converter::isValid($value)
                 ) {
                     throw new ValidationError(
@@ -169,11 +170,71 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      */
     public static function updateModel(Model $model) {
 
+        $classname = get_class($model);
+        $bean = $model->unbox();
+        if ($meta = $model->getMeta()) {
+            $refl = new ReflectionClass($model);
+            //var_dump($meta);
+            //timestamps?
+            if ($meta->timestamps == true) {
+                $now = new \DateTime();
+                $created_prop = $meta->reflections['created_at'];
+                $created_prop->setAccessible(true);
+                $updated_prop = $meta->reflections['updated_at'];
+                $updated_prop->setAccessible(true);
+                if ($created_prop->getValue($model) == null) {
+                    $bean->created_at = $now;
+                    $created_prop->setValue($model, $now);
+                }
+                $updated_prop->setValue($model, $now);
+                $bean->updated_at = $now;
+            }
+
+            foreach ($meta->converters as $prop => $converter) {
+                if ($prop == 'id') continue;
+            }
+
+            var_dump($meta);
+        }
+
 
 
         exit;
     }
 
+    /**
+     * Get all ReflectionProperties from Model
+     * @param Model $model
+     */
+    private static function getReflections(Model $model) {
+        $refl = new \ReflectionClass($model);
+        $ignore = ['bean'];
+        $result = [];
+        try {
+
+            do {
+                /* @var $rprop \ReflectionProperty */
+                foreach ($refl->getProperties() as $rprop) {
+                    if (
+                            !$rprop->isStatic()
+                            and!$rprop->isPublic()
+                            and!in_array($rprop->getName(), $ignore)
+                    ) {
+                        $result[$rprop->getName()] = $rprop;
+                    }
+                }
+            } while ($refl = $refl->getParentClass());
+        } catch (\ReflectionException $e) { $e->getCode(); }
+
+        return $result;
+    }
+
+    /**
+     * Build Metadats for Model
+     * @staticvar array $filters
+     * @param Model $model
+     * @return type
+     */
     private static function buildMetaDatas(Model $model) {
 
         static $filters = [];
@@ -191,7 +252,9 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             $key = md5($fileinfo->getMTime() . $fileinfo->getPathname());
             $item = $cache->getItem($key);
             if ($item->isHit()) {
-                self::$metadatas[$classname] = array_to_object($item->get());
+                $meta = $item->get();
+                self::$metadatas[$classname] = array_to_object($meta);
+                self::$metadatas[$classname]->reflections = self::getReflections($model);
                 return;
             }
         }
@@ -244,13 +307,16 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             if (preg_match(Model::VALID_BEAN, $type)) $meta["type"] = $type;
         }
 
+
+        $properties = self::getReflections($model);
+
         //reads properties from model class
-        foreach ($refl->getProperties() as $prop) {
+        foreach ($properties as $prop) {
             if (
                     ($prop->class !== Model::class )
                     and ( $prop->class !== SimpleModel::class )
                     and!$prop->isStatic()
-                    and ($prop->isProtected() or $prop->isPrivate())
+                    and!$prop->isPublic()
             ) {
                 $meta["properties"][] = $prop->name;
                 $meta["converters"][$prop->name] = Text::class;
@@ -302,6 +368,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         self::$metadatas[$classname] = array_to_object($meta);
+        self::$metadatas[$classname]->reflections = $properties;
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////
