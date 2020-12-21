@@ -54,6 +54,9 @@ class Bean extends OODBBean {
     public function update() {
         if ($model = $this->getModel()) {
             if (method_exists($model, "update")) $model->update();
+
+
+
             $model->_validate();  //use validators
 
             $model->_update(); //inject model data into bean
