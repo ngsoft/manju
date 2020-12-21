@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Manju\ORM;
 
 use ArrayAccess,
@@ -80,8 +82,8 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      */
     public function getMeta(string $key = null) {
         $meta = BeanHelper::$metadatas[get_class($this)];
-        if ($key === null) return $meta;
-        return $meta->{$key} ?? null;
+        if ($key == null) return $meta;
+        return $meta[$key] ?? null;
     }
 
     /**

@@ -8,7 +8,7 @@ use ArrayAccess,
     JsonSerializable,
     Serializable;
 
-class Object implements ArrayAccess, Countable, Iterator, JsonSerializable, Serializable {
+class ArrayObject implements ArrayAccess, Countable, Iterator, JsonSerializable, Serializable {
 
     /** @var array */
     protected $storage = [];
@@ -27,10 +27,18 @@ class Object implements ArrayAccess, Countable, Iterator, JsonSerializable, Seri
      * @return static
      */
     public static function from(array &$array) {
-
         $obj = static::create();
         $obj->storage = &$array;
         return $obj;
+    }
+
+    /**
+     * Exports Object to array
+     * @return array
+     */
+    public function &toArray(): array {
+        $value = &$this->storage;
+        return $value;
     }
 
     /**
@@ -48,11 +56,10 @@ class Object implements ArrayAccess, Countable, Iterator, JsonSerializable, Seri
 
     /** {@inheritdoc} */
     public function &offsetGet($offset) {
-        if ($offset == null) {
+        if ($offset === null) {
             $this->storage[] = [];
             $offset = array_key_last($this->storage);
         }
-
         if (isset($this->storage[$offset])) {
             if (is_array($this->storage[$offset])) {
                 $array = &$this->storage[$offset];
@@ -89,6 +96,7 @@ class Object implements ArrayAccess, Countable, Iterator, JsonSerializable, Seri
 
     /** {@inheritdoc} */
     public function key() {
+
         return key($this->storage);
     }
 

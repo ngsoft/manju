@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Manju\Helpers;
 
+use DateTime;
 use Manju\{
     Converters\Text, Exceptions\ManjuException, Exceptions\ValidationError, Filters\Ignore, Filters\Required, Filters\Timestamps,
     Filters\Type, Filters\Unique, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
@@ -15,11 +16,12 @@ use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, Facade, OODBBean, SimpleModel
 };
 use ReflectionClass,
+    ReflectionException,
     ReflectionProperty,
     SplFileInfo,
     Throwable;
 use function Manju\{
-    array_to_object, autoloadDir, findClassesImplementing, toSnake
+    autoloadDir, findClassesImplementing, toSnake
 };
 
 final class BeanHelper extends SimpleFacadeBeanHelper {
@@ -33,7 +35,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var AnnotationFilter[] */
     public static $filters = [];
 
-    /** @var array<string,\stdClass> */
+    /** @var array<string,ArrayObject> */
     public static $metadatas = [];
 
     /** @var string[] */
@@ -95,7 +97,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
     }
 
-    ///////////////////////////////// ToolBox  /////////////////////////////////
+///////////////////////////////// ToolBox  /////////////////////////////////
 
     /**
      * Dispense or loads a bean for a given model
@@ -125,22 +127,27 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      * @param Model $model
      */
     public static function validateModel(Model $model) {
-
         $classname = get_class($model);
         if ($meta = $model->getMeta()) {
+
+            var_dump($model);
+
+
             foreach ($meta->properties as $prop) {
-                $rprop = new ReflectionProperty($model, $prop);
+
+                $rprop = $meta->reflections[$prop];
                 $rprop->setAccessible(true);
                 $value = $rprop->getValue($model);
+                $required = $meta->required->toArray();
                 //check required
                 if (
-                        in_array($prop, $meta->required)
+                        in_array($prop, $required)
                         and $value == null
                 ) {
                     throw new ValidationError($classname . '::$' . $prop . " Cannot be NULL");
                 }
                 //check converter value
-                $converter = $meta->converters->{$prop} ?? null;
+                $converter = $meta->converters[$prop] ?? null;
                 if (
                         isset($converter)
                         and ($value != null)
@@ -170,6 +177,8 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      */
     public static function updateModel(Model $model) {
 
+        echo "updateModel\n";
+
         $classname = get_class($model);
         $bean = $model->unbox();
         if ($meta = $model->getMeta()) {
@@ -177,7 +186,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             //var_dump($meta);
             //timestamps?
             if ($meta->timestamps == true) {
-                $now = new \DateTime();
+                $now = new DateTime();
                 $created_prop = $meta->reflections['created_at'];
                 $created_prop->setAccessible(true);
                 $updated_prop = $meta->reflections['updated_at'];
@@ -220,11 +229,11 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
                             and!$rprop->isPublic()
                             and!in_array($rprop->getName(), $ignore)
                     ) {
-                        $result[$rprop->getName()] = $rprop;
+                        if (!isset($result[$rprop->getName()])) $result[$rprop->getName()] = $rprop;
                     }
                 }
             } while ($refl = $refl->getParentClass());
-        } catch (\ReflectionException $e) { $e->getCode(); }
+        } catch (ReflectionException $e) { $e->getCode(); }
 
         return $result;
     }
@@ -253,8 +262,8 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             $item = $cache->getItem($key);
             if ($item->isHit()) {
                 $meta = $item->get();
-                self::$metadatas[$classname] = array_to_object($meta);
-                self::$metadatas[$classname]->reflections = self::getReflections($model);
+                $meta['reflections'] = self::getReflections($model);
+                self::$metadatas[$classname] = ArrayObject::from($meta);
                 return;
             }
         }
@@ -367,8 +376,9 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             $cache->save($item);
         }
 
-        self::$metadatas[$classname] = array_to_object($meta);
-        self::$metadatas[$classname]->reflections = $properties;
+        $meta['reflections'] = $properties;
+
+        self::$metadatas[$classname] = ArrayObject::from($meta);
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////
