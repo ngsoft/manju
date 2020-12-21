@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Manju\Helpers;
 
 use Manju\{
-    Converters\Text, Exceptions\ManjuException, Filters\Ignore, Filters\Required, Filters\Timestamps, Filters\Type, Filters\Unique,
-    Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
+    Converters\Text, Exceptions\ManjuException, Exceptions\ValidationError, Filters\Ignore, Filters\Required, Filters\Timestamps,
+    Filters\Type, Filters\Unique, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
 };
 use Psr\Cache\{
     CacheItemInterface, CacheItemPoolInterface
@@ -15,6 +15,7 @@ use RedBeanPHP\{
     BeanHelper\SimpleFacadeBeanHelper, Facade, OODBBean, SimpleModel
 };
 use ReflectionClass,
+    ReflectionProperty,
     SplFileInfo,
     Throwable;
 use function Manju\{
@@ -102,7 +103,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      * @param int|null $id
      */
     public static function dispenseFor(Model $model, int $id = null) {
-
         if (($type = $model->getMeta("type"))) {
             self::$for = $model;
             if (is_int($id)) Facade::load($type, $id);
@@ -120,6 +120,60 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         if ($type = $model->getMeta("type")) self::$models[$type] = $classname;
     }
 
+    /**
+     * Validate Model Values using Converters
+     * @param Model $model
+     */
+    public static function validateModel(Model $model) {
+
+        $classname = get_class($model);
+        if ($meta = $model->getMeta()) {
+            foreach ($meta->properties as $prop) {
+                $rprop = new ReflectionProperty($model, $prop);
+                $rprop->setAccessible(true);
+                $value = $rprop->getValue($model);
+                //check required
+                if (
+                        in_array($prop, $meta->required)
+                        and $value == null
+                ) {
+                    throw new ValidationError($classname . '::$' . $prop . " Cannot be NULL");
+                }
+                //check converter value
+                $converter = $meta->converters->{$prop} ?? null;
+                if (
+                        isset($converter)
+                        and!$converter::isValid($value)
+                ) {
+                    throw new ValidationError(
+                            $classname . '::$' . $prop . " Invalid Type " .
+                            $converter::getTypes()[0] . " requested but " .
+                            gettype($value) . " given."
+                    );
+                }
+                // checks if a methode Model::validate($prop,$value) exists and run it
+                if (
+                        method_exists($model, 'validate')
+                        and (false == $model->validate($prop, $value))
+                ) {
+
+                    throw new ValidationError($classname . "::validateModel($prop, ...) failed the validation test.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Write Model datas to bean and checks for unique Properties
+     * @param Model $model
+     */
+    public static function updateModel(Model $model) {
+
+
+
+        exit;
+    }
+
     private static function buildMetaDatas(Model $model) {
 
         static $filters = [];
@@ -129,7 +183,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         if (isset(self::$metadatas[$classname])) return;
         $refl = new ReflectionClass($model);
         $cache = ORM::getCachePool();
-        $cache = null;
         $item = null;
         //loads from cache
         if ($cache instanceof CacheItemPoolInterface) {
@@ -152,12 +205,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             "converters" => [],
             //table name
             "type" => null,
-                // unique values
-                //"unique" => [],
-                //not null values
-                //"required" => [],
-                //enables created_at and updated_at
-                //"timestamps" => false
         ];
 
         if (empty($filters)) {
@@ -255,7 +302,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         self::$metadatas[$classname] = array_to_object($meta);
-        var_dump(self::$metadatas[$classname]);
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////

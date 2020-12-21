@@ -14,7 +14,8 @@ use Manju\{
 use RedBeanPHP\{
     Facade, OODBBean, SimpleModel
 };
-use Throwable;
+use ReflectionClass,
+    Throwable;
 use function Manju\toCamelCase;
 
 /**
@@ -471,52 +472,26 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         if ($meta = $this->getMeta()) {
             $b = $this->bean;
             $this->id = &$b->id;
+            $refl = new ReflectionClass($this);
+
+            // print_r($refl);
+            //using ReflectionClass to hydrate parent private properties
+
             foreach ($meta->converters as $prop => $converter) {
                 $value = $b->{$prop};
-                if ($value !== null) $this->{$prop} = $converter::convertFromBean($value);
+
+                if ($value !== null) {
+                    $rprop = $refl->getProperty($prop);
+                    $rprop->setAccessible(true);
+                    $rprop->setValue($this, $converter::convertFromBean($value));
+                    //$this->{$prop} = $converter::convertFromBean($value);
+                }
             }
             if ($meta->timestamps === true) {
                 foreach (["created_at", "updated_at"] as $prop) {
                     $value = $b->{$prop};
                     if ($value !== null) $value = Date::convertFromBean($value);
                     $this->{$prop} = $value;
-                }
-            }
-        }
-    }
-
-    /**
-     * Validate Model Datas
-     * @suppress PhanAccessReadOnlyMagicProperty
-     * @internal
-     * @suppress PhanUndeclaredMethod
-     * @throws ValidationError Prevents Redbeans from Writing wrong datas
-     */
-    public function _validate() {
-
-        $classname = get_class($this);
-
-        if ($meta = $this->getMeta()) {
-
-            foreach ($meta->required as $prop) {
-                if ($this->{$prop} === null) throw new ValidationError($classname . '::$' . $prop . " Cannot be NULL");
-            }
-
-            foreach ($meta->converters as $prop => $converter) {
-                if ($this->{$prop} === null) continue;
-                if (!$converter::isValid($this->{$prop})) {
-                    throw new ValidationError(
-                            $classname . '::$' . $prop . " Invalid Type " .
-                            $converter::getTypes()[0] . " requested but " .
-                            gettype($this->{$prop}) . " given."
-                    );
-                }
-
-                if (
-                        method_exists($this, "validateModel")
-                        and ( false === $this->validateModel($prop, $this->{$prop}))
-                ) {
-                    throw new ValidationError($classname . "::validateModel($prop, ...) failed the validation test.");
                 }
             }
         }

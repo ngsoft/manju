@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Manju\ORM;
 
-use Manju\ORM\Model,
-    RedBeanPHP\OODBBean;
+use Manju\{
+    Helpers\BeanHelper, ORM\Model
+};
+use RedBeanPHP\OODBBean;
 
 class Bean extends OODBBean {
 
@@ -55,11 +57,10 @@ class Bean extends OODBBean {
         if ($model = $this->getModel()) {
             if (method_exists($model, "update")) $model->update();
 
-
-
-            $model->_validate();  //use validators
-
-            $model->_update(); //inject model data into bean
+            BeanHelper::validateModel($model);
+            BeanHelper::updateModel($model);
+            //  $model->_validate();  //use validators
+            //$model->_update(); //inject model data into bean
         }
     }
 
