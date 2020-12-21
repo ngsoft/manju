@@ -32,6 +32,9 @@ final class ORM {
     /** @var array<string,Connection> */
     private static $connections = [];
 
+    /** @var bool */
+    private static $started = false;
+
     /** @return ContainerInterface|null */
     public static function getContainer(): ?ContainerInterface {
         return self::$container;
@@ -119,6 +122,7 @@ final class ORM {
      */
     public static function addModelPath(string ...$paths) {
         BeanHelper::addSearchPath(...$paths);
+        if (self::$started == true) BeanHelper::scanForModels();
     }
 
     /**
@@ -126,7 +130,10 @@ final class ORM {
      * @param Model $model
      */
     public function addModel(Model $model) {
-        return BeanHelper::addModel($model);
+        if (self::$started == false) {
+            throw new ManjuException('Cannot add Model: ORM not started.');
+        }
+        BeanHelper::addModel($model);
     }
 
     /**
@@ -142,19 +149,19 @@ final class ORM {
 
     /**
      * Starts the ORM
-     * @staticvar type $started
      * @param string|null $searchpath Path to Models
      * @param Connection|null $connection Connection to use
      */
     public static function start(?string $searchpath = null, ?Connection $connection = null) {
-        static $started;
-        if ($started != true) {
+
+        if (self::$started != true) {
             if ($connection instanceof Connection) self::addConnection($connection, true);
             elseif (count(self::$connections) == 0) throw new ManjuException("Cannot start ORM, No connections defined");
             self::initializeBeanHelper();
-            $started = true;
+            if (is_string($searchpath)) self::addModelPath($searchpath);
+            BeanHelper::scanForModels();
+            self:: $started = true;
         }
-        if (is_string($searchpath)) self::addModelPath($searchpath);
     }
 
 }

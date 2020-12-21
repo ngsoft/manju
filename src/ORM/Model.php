@@ -11,13 +11,12 @@ use ArrayAccess,
     IteratorAggregate,
     JsonSerializable;
 use Manju\{
-    Converters\Date, Exceptions\InvalidProperty, Helpers\BeanHelper, Helpers\Collection, ORM
+    Exceptions\InvalidProperty, Helpers\BeanHelper, Helpers\Collection, ORM
 };
 use RedBeanPHP\{
     Facade, OODBBean, SimpleModel
 };
-use ReflectionClass,
-    Throwable;
+use Throwable;
 use function Manju\toCamelCase;
 
 /**
@@ -53,7 +52,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Get the Entry ID
      * @return int
      */
-    public function getId(): int {
+    final public function getId(): int {
         return intval($this->id);
     }
 
@@ -61,7 +60,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Get Entry Creation Date
      * @return DateTime
      */
-    public function getCreatedAt(): DateTime {
+    final public function getCreatedAt(): DateTime {
         return $this->created_at ?? new DateTime();
     }
 
@@ -69,7 +68,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Get Last Update Date
      * @return DateTime
      */
-    public function getUpdatedAt(): DateTime {
+    final public function getUpdatedAt(): DateTime {
         return $this->updated_at ?? new DateTime();
     }
 
@@ -80,7 +79,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param string|null $key
      * @return mixed
      */
-    public function getMeta(string $key = null) {
+    final public function getMeta(string $key = null) {
         $meta = BeanHelper::$metadatas[get_class($this)];
         if ($key == null) return $meta;
         return $meta[$key] ?? null;
@@ -90,7 +89,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Get Metadata Bean Type
      * @return string|null
      */
-    public static function getType(): ?string {
+    final public static function getType(): ?string {
         if ($meta = BeanHelper::$metadatas[static::class] ?? null) {
             return $meta->type;
         }
@@ -106,7 +105,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param int|null $id if not set it will just create an empty Model
      * @return static Instance of Model
      */
-    public static function load(int $id = null) {
+    final public static function load(int $id = null) {
         $i = new static();
         BeanHelper::dispenseFor($i, $id);
         return $i;
@@ -117,7 +116,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param Model|null $model
      * @return static
      */
-    public static function create(Model $model = null) {
+    final public static function create(Model $model = null) {
         if ($model instanceof static) {
             BeanHelper::dispenseFor($model);
             return $model;
@@ -130,7 +129,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param array $array
      * @return static
      */
-    public static function from(array $array) {
+    final public static function from(array $array) {
 
         $model = static::create();
         foreach ($array as $key => $val) {
@@ -148,7 +147,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Remove Entry from the database
      * @return void
      */
-    public function trash(): void {
+    final public function trash(): void {
         if ($this->bean instanceof OODBBean) {
             Facade::trash($this->bean);
         }
@@ -158,7 +157,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Reloads Data for current Entry from the database
      * @return static New instance with fresh data
      */
-    public function fresh() {
+    final public function fresh() {
         if (
                 ($this->bean instanceof OODBBean)
                 and $this->bean->id > 0
@@ -173,7 +172,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param bool $throws_validation_error
      * @return int|null
      */
-    public function save(bool $throws_validation_error = false): ?int {
+    final public function save(bool $throws_validation_error = false): ?int {
         if (!($this->bean)) BeanHelper::dispenseFor($this);
         $id = null;
         if ($this->bean instanceof OODBBean) {
@@ -198,7 +197,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param array $bindings array of values to be bound to parameters in query
      * @return static[]
      */
-    public static function find(string $sql = null, array $bindings = []) {
+    final public static function find(string $sql = null, array $bindings = []) {
         $result = [];
         if ($type = static::getType()) {
             foreach (Facade::find($type, $sql, $bindings) as $bean) {
@@ -214,7 +213,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param array $bindings array of values to be bound to parameters in query
      * @return static|null
      */
-    public static function findOne(string $sql = "", array $bindings = []) {
+    final public static function findOne(string $sql = "", array $bindings = []) {
         if ($type = static::getType()) {
             if ($result = Facade::findOne($type, $sql, $bindings)) return $result->box();
         }
@@ -227,7 +226,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param array $bindings parameters to bind to SQL
      * @return int
      */
-    public static function countEntries(string $sql = "", array $bindings = []): int {
+    final public static function countEntries(string $sql = "", array $bindings = []): int {
         if ($type = static::getType()) {
             return Facade::count($type, $sql, $bindings);
         }
@@ -258,7 +257,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param Model|string $model Related Model
      * @return Collection|null
      */
-    public function getSharedList($model) {
+    final public function getSharedList($model) {
         $this->bean or static::create($this);
         if (
                 ($type = $this->getModelType($model))
@@ -276,7 +275,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param Model|string $model Related Model
      * @return Collection|null
      */
-    public function getOwnedList($model) {
+    final public function getOwnedList($model) {
         $this->bean or static::create($this);
         if (
                 ($type = $this->getModelType($model))
@@ -295,7 +294,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param Model|string $model
      * @return Model|null
      */
-    public function getListOwner($model) {
+    final public function getListOwner($model) {
         $this->bean or static::create($this);
         if (
                 ($type = $this->getModelType($model))
@@ -312,7 +311,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param Model$model
      * @return static
      */
-    public function setListOwner(Model $model) {
+    final public function setListOwner(Model $model) {
         $this->bean or static::create($this);
         if (
                 ($type = $this->getModelType($model))
@@ -348,7 +347,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * Exports Model data to Array
      * @return array
      */
-    public function toArray(): array {
+    final public function toArray(): array {
         $this->bean or static::create($this);
         $array = [];
         $props = array_merge(["id"], $this->getMeta("properties")->toArray());
@@ -365,7 +364,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @param array $array
      * @return static
      */
-    public static function __set_state(array $array) {
+    final public static function __set_state(array $array) {
         $i = static::load();
         foreach ($array as $k => $v) {
             $i->offsetSet($k, $v);
@@ -374,14 +373,14 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /** {@inheritdoc} */
-    public function offsetExists($offset) {
+    final public function offsetExists($offset) {
         $this->bean or static::create($this);
         $getter = $this->getGetterMethod($offset);
         return method_exists($this, $getter) && $this->{$getter}() !== null;
     }
 
     /** {@inheritdoc} */
-    public function &offsetGet($offset) {
+    final public function &offsetGet($offset) {
         $this->bean or static::create($this);
         $getter = $this->getGetterMethod($offset);
         if (method_exists($this, $getter)) {
@@ -391,7 +390,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /** {@inheritdoc} */
-    public function offsetSet($offset, $value) {
+    final public function offsetSet($offset, $value) {
         $this->bean or static::create($this);
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
@@ -400,7 +399,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /** {@inheritdoc} */
-    public function offsetUnset($offset) {
+    final public function offsetUnset($offset) {
         $this->bean or static::create($this);
         $setter = $this->getSetterMethod($offset);
         if (method_exists($this, $setter)) {
@@ -409,37 +408,37 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /** {@inheritdoc} */
-    public function count() {
+    final public function count() {
         $this->bean or static::create($this);
         return count($this->toArray());
     }
 
     /** {@inheritdoc} */
-    public function getIterator() {
+    final public function getIterator() {
         $this->bean or static::create($this);
         return new ArrayIterator($this->toArray());
     }
 
     /** {@inheritdoc} */
-    public function jsonSerialize() {
+    final public function jsonSerialize() {
         return $this->toArray();
     }
 
     ////////////////////////////   Magics   ////////////////////////////
 
     /** {@inheritdoc} */
-    public function &__get($prop) {
+    final public function &__get($prop) {
         $value = $this->offsetGet($prop);
         return $value;
     }
 
     /** {@inheritdoc} */
-    public function __set($prop, $value) {
+    final public function __set($prop, $value) {
         $this->offsetSet($prop, $value);
     }
 
     /** {@inheritdoc} */
-    public function __isset($key) {
+    final public function __isset($key) {
         return $this->offsetExists($key);
     }
 
@@ -447,7 +446,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @suppress PhanAccessReadOnlyMagicProperty
      * {@inheritdoc}
      */
-    public function __clone() {
+    final public function __clone() {
         if ($this->bean instanceof OODBBean) {
             $this->bean = clone $this->bean;
             $this->bean->setMeta("model", $this);
@@ -456,12 +455,12 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     }
 
     /** {@inheritdoc} */
-    public function __toString() {
+    final public function __toString() {
         return var_export($this->toArray(), true);
     }
 
     /** {@inheritdoc} */
-    public function __unset($prop) {
+    final public function __unset($prop) {
         $this->offsetUnset($prop);
     }
 

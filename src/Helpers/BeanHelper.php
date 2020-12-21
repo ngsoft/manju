@@ -18,7 +18,6 @@ use RedBeanPHP\{
 };
 use ReflectionClass,
     ReflectionException,
-    ReflectionProperty,
     SplFileInfo,
     Throwable;
 use function Manju\{
@@ -92,6 +91,13 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             if (($real == false) or!is_dir($real)) throw new ManjuException("Invalid model search path $path.");
             autoloadDir($path);
         }
+    }
+
+    /**
+     * Scans for classes implementing Model
+     * and registers them
+     */
+    public static function scanForModels() {
         foreach (findClassesImplementing(Model::class) as $classname) {
             $model = new $classname();
             self::addModel($model);
@@ -129,7 +135,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      */
     public static function loadModel(Model $model) {
         if ($meta = $model->getMeta()) {
-            $classname = get_class($model);
             $bean = $model->unbox();
             $refl = $meta->reflections;
             $id = &$bean->id;
@@ -155,6 +160,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     /**
      * Validate Model Values using Converters
      * @param Model $model
+     * @suppress PhanUndeclaredMethod
      */
     public static function validateModel(Model $model) {
         $classname = get_class($model);
@@ -189,7 +195,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
                         and (false == $model->validate($prop, $value))
                 ) {
 
-                    throw new ValidationError($classname . "::validateModel($prop, ...) failed the validation test.");
+                    throw new ValidationError($classname . "::validate($prop, ...) failed the validation test.");
                 }
             }
         }
@@ -252,7 +258,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         try {
 
             do {
-                /* @var $rprop ReflectionProperty */
                 foreach ($refl->getProperties() as $rprop) {
                     if (
                             !$rprop->isStatic()
@@ -275,7 +280,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      * Build Metadats for Model
      * @staticvar array $filters
      * @param Model $model
-     * @return type
      */
     private static function buildMetaDatas(Model $model) {
 
