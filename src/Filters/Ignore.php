@@ -16,6 +16,20 @@ class Ignore extends AnnotationFilterAbstract {
     public $tags = ["ignore"];
 
     /** {@inheritdoc} */
+    public function afterProcess(array &$meta) {
+
+        if (isset($meta["ignore"])) {
+            foreach ($meta["ignore"] as $key) {
+                unset($meta["converters"][$key]);
+                foreach (["properties", "required", "unique"] as $metakey) {
+                    $meta[$metakey] = array_filter($meta[$metakey], function ($val) use($key) { return $key !== $val; });
+                }
+            }
+            unset($meta["ignore"]);
+        }
+    }
+
+    /** {@inheritdoc} */
     public function handle(Annotation $annotation, array &$meta) {
         /** @ignore (param1, param2) */
         if ($annotation->annotationType === "CLASS") $props = (array) $annotation->value;

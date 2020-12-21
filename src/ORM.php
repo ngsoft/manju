@@ -108,6 +108,7 @@ final class ORM {
         ) {
             return self::$connections[Facade::$currentDB];
         }
+        return null;
     }
 
     ///////////////////////////////// Model Manager  /////////////////////////////////

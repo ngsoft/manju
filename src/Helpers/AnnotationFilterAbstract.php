@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Manju\Helpers;
 
 use Manju\{
-    Exceptions\InvalidProperty, Interfaces\AnnotationFilter, Reflection\Annotation
+    Interfaces\AnnotationFilter, Reflection\Annotation
 };
 
 abstract class AnnotationFilterAbstract implements AnnotationFilter {
@@ -22,6 +22,11 @@ abstract class AnnotationFilterAbstract implements AnnotationFilter {
      * @param array $meta
      */
     abstract public function handle(Annotation $annotation, array &$meta);
+
+    /** {@inheritdoc} */
+    public function afterProcess(array &$meta) {
+        //do nothing
+    }
 
     /** {@inheritdoc} */
     public function process(array $data, array &$meta) {

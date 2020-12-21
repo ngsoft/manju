@@ -124,8 +124,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
 
         static $filters = [];
 
-
-
         $classname = get_class($model);
 
         if (isset(self::$metadatas[$classname])) return;
@@ -152,8 +150,8 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             "properties" => [],
             //properties data types
             "converters" => [],
-                //table name
-                //"type" => null,
+            //table name
+            "type" => null,
                 // unique values
                 //"unique" => [],
                 //not null values
@@ -184,9 +182,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         foreach ($filters as $filter) {
             $meta[$filter->getKey()] = $filter->getDefaultValue();
         }
-
-
-
 
         //set type(table) (without annotations)
         if (
@@ -222,8 +217,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
 
-
-
         //Reads annotations
         $parser = new Parser();
         if ($annotations = $parser->ParseAll($refl)) {
@@ -254,17 +247,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         foreach ($filters as $filter) {
             $filter->afterProcess($meta);
         }
-
-        if (isset($meta["ignore"])) {
-            foreach ($meta["ignore"] as $key) {
-                unset($meta["converters"][$key]);
-                foreach (["properties", "required", "unique"] as $metakey) {
-                    $meta[$metakey] = array_filter($meta[$metakey], function ($val) use($key) { return $key !== $val; });
-                }
-            }
-            unset($meta["ignore"]);
-        }
-
 
         //save to cache
         if ($item instanceof CacheItemInterface) {

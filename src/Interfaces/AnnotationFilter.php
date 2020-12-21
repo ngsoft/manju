@@ -28,5 +28,5 @@ interface AnnotationFilter {
      * What to do after processing metadatas
      * @param array $meta
      */
-    // public function afterProcess(array &$meta);
+    public function afterProcess(array &$meta);
 }

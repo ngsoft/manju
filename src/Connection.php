@@ -2,8 +2,7 @@
 
 namespace Manju;
 
-use Manju\Exceptions\ManjuException,
-    Psr\Cache\CacheItemPoolInterface;
+use Manju\Exceptions\ManjuException;
 use RedBeanPHP\{
     Facade, ToolBox
 };
