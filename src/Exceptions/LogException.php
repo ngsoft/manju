@@ -18,7 +18,8 @@ trait LogException {
      */
     public function __construct(string $message = "", int $code = 0, $previous = NULL) {
         if ($this instanceof Throwable) {
-            $logger = ORM::getLogger(); $loglevel = ORM::LOGLEVEL;
+            $logger = ORM::getLogger();
+            $loglevel = ORM::LOGLEVEL;
             if ($logger instanceof LoggerInterface) {
                 $infos = [
                     "Exception" => get_class($this),

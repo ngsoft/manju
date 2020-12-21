@@ -117,7 +117,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
      * @return static
      */
     final public static function create(Model $model = null) {
-        if ($model instanceof static) {
+        if ($model instanceof self) {
             BeanHelper::dispenseFor($model);
             return $model;
         }
