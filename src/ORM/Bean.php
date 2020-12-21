@@ -31,7 +31,7 @@ class Bean extends OODBBean {
      */
     public function open() {
         if ($model = $this->getModel()) {
-            $model->_load();
+            BeanHelper::loadModel($model);
             if (method_exists($model, "open")) $model->open();
         }
     }
@@ -43,7 +43,7 @@ class Bean extends OODBBean {
      */
     public function after_update() {
         if ($model = $this->getModel()) {
-            $model->_load(); //sync the id
+            BeanHelper::loadModel($model); //sync the id
             if (method_exists($model, "after_update")) $model->after_update();
         }
     }
@@ -56,11 +56,8 @@ class Bean extends OODBBean {
     public function update() {
         if ($model = $this->getModel()) {
             if (method_exists($model, "update")) $model->update();
-
-            BeanHelper::validateModel($model);
-            BeanHelper::updateModel($model);
-            //  $model->_validate();  //use validators
-            //$model->_update(); //inject model data into bean
+            BeanHelper::validateModel($model); //use validators
+            BeanHelper::updateModel($model); //inject model data into bean
         }
     }
 

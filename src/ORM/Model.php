@@ -11,7 +11,7 @@ use ArrayAccess,
     IteratorAggregate,
     JsonSerializable;
 use Manju\{
-    Converters\Date, Exceptions\InvalidProperty, Exceptions\ValidationError, Helpers\BeanHelper, Helpers\Collection, ORM
+    Converters\Date, Exceptions\InvalidProperty, Helpers\BeanHelper, Helpers\Collection, ORM
 };
 use RedBeanPHP\{
     Facade, OODBBean, SimpleModel
@@ -136,7 +136,9 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
         foreach ($array as $key => $val) {
             try {
                 $model->offsetSet($key, $val);
-            } catch (Throwable $ex) { $ex->getCode(); }
+            } catch (Throwable $ex) {
+                $ex->getCode();
+            }
         }
 
         return $model;
@@ -349,7 +351,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     public function toArray(): array {
         $this->bean or static::create($this);
         $array = [];
-        $props = array_merge(["id"], $this->getMeta("properties"));
+        $props = array_merge(["id"], $this->getMeta("properties")->toArray());
         if ($this->getMeta("timestamps")) $props = array_merge($props, ["created_at", "updated_at"]);
         foreach ($props as $key) {
             $getter = $this->getGetterMethod($key);
@@ -461,75 +463,6 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
     /** {@inheritdoc} */
     public function __unset($prop) {
         $this->offsetUnset($prop);
-    }
-
-    ////////////////////////////   Events   ////////////////////////////
-
-    /**
-     * Sync Model with Bean
-     * @suppress PhanAccessReadOnlyMagicProperty
-     * @internal
-     */
-    public function _load() {
-        if ($meta = $this->getMeta()) {
-            $b = $this->bean;
-            $this->id = &$b->id;
-            $refl = new ReflectionClass($this);
-
-            // print_r($refl);
-            //using ReflectionClass to hydrate parent private properties
-
-            foreach ($meta->converters as $prop => $converter) {
-                $value = $b->{$prop};
-
-                if ($value !== null) {
-                    $rprop = $refl->getProperty($prop);
-                    $rprop->setAccessible(true);
-                    $rprop->setValue($this, $converter::convertFromBean($value));
-                    //$this->{$prop} = $converter::convertFromBean($value);
-                }
-            }
-            if ($meta->timestamps === true) {
-                foreach (["created_at", "updated_at"] as $prop) {
-                    $value = $b->{$prop};
-                    if ($value !== null) $value = Date::convertFromBean($value);
-                    $this->{$prop} = $value;
-                }
-            }
-        }
-    }
-
-    /**
-     * Write datas to bean
-     * @suppress PhanAccessReadOnlyMagicProperty
-     * @internal
-     * @throws ValidationError Prevents Redbeans from Writing wrong datas
-     */
-    public function _update() {
-        $classname = get_class($this);
-        $unique = $this->getMeta('unique');
-
-        if ($meta = $this->getMeta()) {
-            $b = $this->bean;
-            if ($meta->timestamps === true) {
-                $now = new DateTime();
-                if ($this->created_at === null) $this->created_at = $b->created_at = $now;
-                $this->updated_at = $b->updated_at = $now;
-            }
-            foreach ($meta->converters as $prop => $converter) {
-                if ($prop === "id") continue;
-                $value = $converter::convertToBean($this->{$prop});
-                $this->bean->{$prop} = $value;
-                //checks unique value
-                if (in_array($prop, $unique) and!empty($value)) {
-                    if ($model = $classname::findOne(sprintf('%s = ?', $prop), [$value])) {
-                        if ($this->id != $model->id) {
-                            throw new ValidationError($classname . '::$' . $prop . " unique value " . $value . " already exists.");
-                        }
-                    }
-                }
-            }
-        }
     }
 
 }

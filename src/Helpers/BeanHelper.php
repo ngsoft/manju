@@ -6,8 +6,9 @@ namespace Manju\Helpers;
 
 use DateTime;
 use Manju\{
-    Converters\Text, Exceptions\ManjuException, Exceptions\ValidationError, Filters\Ignore, Filters\Required, Filters\Timestamps,
-    Filters\Type, Filters\Unique, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
+    Converters\Date, Converters\Text, Exceptions\ManjuException, Exceptions\ValidationError, Filters\Ignore, Filters\Required,
+    Filters\Timestamps, Filters\Type, Filters\Unique, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model,
+    Reflection\Parser
 };
 use Psr\Cache\{
     CacheItemInterface, CacheItemPoolInterface
@@ -123,20 +124,43 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     /**
+     * Loads Model Data from Bean
+     * @param Model $model
+     */
+    public static function loadModel(Model $model) {
+        if ($meta = $model->getMeta()) {
+            $classname = get_class($model);
+            $bean = $model->unbox();
+            $refl = $meta->reflections;
+            $id = &$bean->id;
+            $refl['id']->setValue($model, $id);
+
+            if ($meta->timestamps == true) {
+                foreach (['created_at', 'updated_at'] as $prop) {
+                    $beanValue = $bean->{$prop};
+                    $value = Date::convertFromBean($beanValue);
+                    $refl[$prop]->setValue($model, $value);
+                }
+            }
+            foreach ($meta->converters as $prop => $converter) {
+                $beanValue = $bean->{$prop};
+                if ($beanValue !== null) {
+                    $value = $converter::convertFromBean($beanValue);
+                    $refl[$prop]->setValue($model, $value);
+                }
+            }
+        }
+    }
+
+    /**
      * Validate Model Values using Converters
      * @param Model $model
      */
     public static function validateModel(Model $model) {
         $classname = get_class($model);
         if ($meta = $model->getMeta()) {
-
-            var_dump($model);
-
-
             foreach ($meta->properties as $prop) {
-
                 $rprop = $meta->reflections[$prop];
-                $rprop->setAccessible(true);
                 $value = $rprop->getValue($model);
                 $required = $meta->required->toArray();
                 //check required
@@ -177,38 +201,44 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      */
     public static function updateModel(Model $model) {
 
-        echo "updateModel\n";
-
         $classname = get_class($model);
         $bean = $model->unbox();
         if ($meta = $model->getMeta()) {
-            $refl = new ReflectionClass($model);
-            //var_dump($meta);
+            $refl = $meta->reflections;
+            $unique = $meta->unique->toArray();
             //timestamps?
             if ($meta->timestamps == true) {
                 $now = new DateTime();
-                $created_prop = $meta->reflections['created_at'];
-                $created_prop->setAccessible(true);
-                $updated_prop = $meta->reflections['updated_at'];
-                $updated_prop->setAccessible(true);
-                if ($created_prop->getValue($model) == null) {
+                $created = $refl['created_at'];
+                $updated = $refl['updated_at'];
+                if ($created->getValue($model) == null) {
                     $bean->created_at = $now;
-                    $created_prop->setValue($model, $now);
+                    $created->setValue($model, $now);
                 }
-                $updated_prop->setValue($model, $now);
+                $updated->setValue($model, $now);
                 $bean->updated_at = $now;
             }
 
             foreach ($meta->converters as $prop => $converter) {
                 if ($prop == 'id') continue;
+                $value = $refl[$prop]->getValue($model);
+                if ($value !== null) {
+                    $beanValue = $converter::convertToBean($value);
+                    $bean->{$prop} = $beanValue;
+                    //checks unique value
+                    if (
+                            in_array($prop, $unique)
+                            and!empty($value)
+                    ) {
+                        if ($entry = $classname::findOne(sprintf('%s = ?', $prop), [$beanValue])) {
+                            if ($bean->id != $entry->id) {
+                                throw new ValidationError($classname . '::$' . $prop . " unique value " . $value . " already exists.");
+                            }
+                        }
+                    }
+                } else $bean->{$prop} = null;
             }
-
-            var_dump($meta);
         }
-
-
-
-        exit;
     }
 
     /**
@@ -222,14 +252,17 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         try {
 
             do {
-                /* @var $rprop \ReflectionProperty */
+                /* @var $rprop ReflectionProperty */
                 foreach ($refl->getProperties() as $rprop) {
                     if (
                             !$rprop->isStatic()
                             and!$rprop->isPublic()
                             and!in_array($rprop->getName(), $ignore)
                     ) {
-                        if (!isset($result[$rprop->getName()])) $result[$rprop->getName()] = $rprop;
+                        if (!isset($result[$rprop->getName()])) {
+                            $rprop->setAccessible(true);
+                            $result[$rprop->getName()] = $rprop;
+                        }
                     }
                 }
             } while ($refl = $refl->getParentClass());
@@ -331,7 +364,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
                 $meta["converters"][$prop->name] = Text::class;
 
                 // if typed default value
-                $prop->setAccessible(true);
                 $val = $prop->getValue($model);
                 $type = gettype($val);
                 if (isset(self::$converters[$type])) $meta["converters"][$prop->name] = self::$converters[$type];
