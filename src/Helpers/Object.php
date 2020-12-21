@@ -2,12 +2,42 @@
 
 namespace Manju\Helpers;
 
-class Object implements \ArrayAccess, \Countable, \Iterator, \JsonSerializable {
+use ArrayAccess,
+    Countable,
+    Iterator,
+    JsonSerializable,
+    Serializable;
+
+class Object implements ArrayAccess, Countable, Iterator, JsonSerializable, Serializable {
 
     /** @var array */
     protected $storage = [];
 
-    public function __construct(&$array = []) {
+    /**
+     * Creates a new Object
+     * @return static
+     */
+    public static function create() {
+        return new static();
+    }
+
+    /**
+     * Creates an Objec from an array
+     * @param array $array
+     * @return static
+     */
+    public static function from(array &$array) {
+
+        $obj = static::create();
+        $obj->storage = &$array;
+        return $obj;
+    }
+
+    /**
+     * Creates an Object
+     * @param array $array
+     */
+    public function __construct(array &$array = []) {
         $this->storage = &$array;
     }
 
@@ -101,6 +131,15 @@ class Object implements \ArrayAccess, \Countable, \Iterator, \JsonSerializable {
     /** {@inheritdoc} */
     public function jsonSerialize() {
         return $this->storage;
+    }
+
+    public function serialize() {
+        return serialize($this->storage);
+    }
+
+    public function unserialize($serialized) {
+        $array = unserialize($serialized);
+        if (is_array($array)) $this->storage = &$array;
     }
 
 }
