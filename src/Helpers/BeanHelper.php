@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Manju\Helpers;
 
 use Manju\{
-    Converters\Text, Exceptions\ManjuException, Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
+    Converters\Text, Exceptions\ManjuException, Filters\Ignore, Filters\Required, Filters\Timestamps, Filters\Type, Filters\Unique,
+    Interfaces\AnnotationFilter, Interfaces\Converter, ORM, ORM\Model, Reflection\Parser
 };
 use Psr\Cache\{
     CacheItemInterface, CacheItemPoolInterface
@@ -34,6 +35,15 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     /** @var array<string,\stdClass> */
     public static $metadatas = [];
 
+    /** @var string[] */
+    public static $baseFilters = [
+        Type::class,
+        Ignore::class,
+        Required::class,
+        Timestamps::class,
+        Unique::class,
+    ];
+
     /** @var Model|null */
     protected static $for = null;
 
@@ -58,11 +68,12 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      * @param string|null $path Path to class implementing AnnotationFilter
      */
     public static function loadFilters(string $path = null) {
-        $path = $path ?? dirname(__DIR__) . '/Filters';
-        if (is_dir($path)) autoloadDir($path);
 
-        foreach (findClassesImplementing(AnnotationFilter::class) as $classname) {
-            self::$filters[] = new $classname();
+        if (is_dir($path)) {
+            autoloadDir($path);
+            foreach (findClassesImplementing(AnnotationFilter::class) as $classname) {
+                if (!isset(self::$filters[$classname])) self::$filters[$classname] = new $classname();
+            }
         }
     }
 
@@ -110,10 +121,17 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     }
 
     private static function buildMetaDatas(Model $model) {
+
+        static $filters = [];
+
+
+
         $classname = get_class($model);
+
         if (isset(self::$metadatas[$classname])) return;
         $refl = new ReflectionClass($model);
         $cache = ORM::getCachePool();
+        $cache = null;
         $item = null;
         //loads from cache
         if ($cache instanceof CacheItemPoolInterface) {
@@ -129,27 +147,45 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
 
         //Create metadata object
         $meta = [
-            //table name
-            "type" => null,
+            //builtin filters
             //property list
             "properties" => [],
             //properties data types
             "converters" => [],
-            // unique values
-            "unique" => [],
-            //not null values
-            "required" => [],
-            //enables created_at and updated_at
-            "timestamps" => false
+                //table name
+                //"type" => null,
+                // unique values
+                //"unique" => [],
+                //not null values
+                //"required" => [],
+                //enables created_at and updated_at
+                //"timestamps" => false
         ];
+
+        if (empty($filters)) {
+            foreach (self::$baseFilters as $filter) {
+                $filters[$filter] = new $filter();
+            }
+
+            foreach (self::$filters as $filter => $instance) {
+                if (!isset($filters[$filter])) {
+                    $filters[$filter] = $instance;
+                }
+            }
+        }
 
         if (!isset(self::$converters[Text::class])) {
             self::loadConverters();
-            self::loadFilters();
         }
 
-        $filters = &self::$filters;
         $converters = &self::$converters;
+
+        //creating initials meta values
+        foreach ($filters as $filter) {
+            $meta[$filter->getKey()] = $filter->getDefaultValue();
+        }
+
+
 
 
         //set type(table) (without annotations)
@@ -185,6 +221,9 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             }
         }
 
+
+
+
         //Reads annotations
         $parser = new Parser();
         if ($annotations = $parser->ParseAll($refl)) {
@@ -211,6 +250,11 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             }
         }
 
+        //after processing
+        foreach ($filters as $filter) {
+            $filter->afterProcess($meta);
+        }
+
         if (isset($meta["ignore"])) {
             foreach ($meta["ignore"] as $key) {
                 unset($meta["converters"][$key]);
@@ -229,6 +273,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
         }
 
         self::$metadatas[$classname] = array_to_object($meta);
+        var_dump(self::$metadatas[$classname]);
     }
 
     ///////////////////////////////// RedBean Overrides  /////////////////////////////////
