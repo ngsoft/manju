@@ -117,9 +117,7 @@ final class ORM {
      * @return bool
      */
     public static function canConnect(): bool {
-        if ($connection = self::getActiveConnection()) {
-            return $connection->testConnection();
-        }
+        if ($connection = self::getActiveConnection()) return $connection->canConnect();
         return false;
     }
 

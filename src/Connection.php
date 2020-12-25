@@ -122,7 +122,7 @@ class Connection {
      * Test the database connection
      * @return bool
      */
-    public function testConnection(): bool {
+    public function canConnect(): bool {
         if (is_bool($this->can_connect)) return $this->can_connect;
         if ($toolbox = $this->getToolbox()) {
             $database = $toolbox
