@@ -112,13 +112,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
      * @param int|null $id
      */
     public static function dispenseFor(Model $model, int $id = null) {
-        static $can_connect;
-        if (!is_bool($can_connect)) $can_connect = ORM::canConnect();
-        if ($can_connect == false) {
-            if ($connection = ORM::getActiveConnection()) {
-                throw new ManjuException('Cannot connect to database connection ' . $connection->getName());
-            } else throw new ManjuException('No database connection has been established.');
-        }
         if (($type = $model->getMeta("type"))) {
             self::$for = $model;
             if (is_int($id)) Facade::load($type, $id);

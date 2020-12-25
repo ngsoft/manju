@@ -159,7 +159,10 @@ final class ORM {
      * @param string|null $searchpath Path to Models
      * @param Connection|null $connection Connection to use
      */
-    public static function start(?string $searchpath = null, ?Connection $connection = null) {
+    public static function start(
+            ?string $searchpath = null,
+            ?Connection $connection = null
+    ) {
 
         if (self::$started != true) {
             if ($connection instanceof Connection) self::addConnection($connection, true);

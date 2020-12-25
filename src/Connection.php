@@ -111,7 +111,6 @@ class Connection {
     /**
      * Set Connection as active into RedBean
      * @return boolean
-     * @throws ManjuException
      */
     public function setActive() {
         if (!isset(Facade::$toolboxes[$this->getName()])) ORM::addConnection($this);
@@ -123,18 +122,20 @@ class Connection {
      * @return bool
      */
     public function canConnect(): bool {
-        if (is_bool($this->can_connect)) return $this->can_connect;
-        if ($toolbox = $this->getToolbox()) {
-            $database = $toolbox
-                    ->getDatabaseAdapter()
-                    ->getDatabase();
-            try {
-                @$database->connect();
-            } catch (\Exception $e) { $e->getCode(); }
-            $this->can_connect = $database->isConnected();
-            if (!$this->isActive()) $database->close();
+        if (!is_bool($this->can_connect)) {
+            if ($toolbox = $this->getToolbox()) {
+                $database = $toolbox
+                        ->getDatabaseAdapter()
+                        ->getDatabase();
+                try {
+                    @$database->connect();
+                } catch (\Exception $e) { $e->getCode(); }
+                $this->can_connect = $database->isConnected();
+                if (!$this->isActive()) $database->close();
+            }
             return $this->can_connect;
         }
+
         return false;
     }
 
