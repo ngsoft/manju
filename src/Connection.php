@@ -21,6 +21,9 @@ class Connection {
     /** @var string|null */
     private $password;
 
+    /** @var bool|null */
+    private $can_connect;
+
     public function __construct(
             iterable $config = []
     ) {
@@ -96,7 +99,7 @@ class Connection {
      * @internal
      * @return bool
      */
-    public function addToRedBean() {
+    public function addToRedBean(): bool {
         $name = $this->getName();
         if (!isset(Facade::$toolboxes[$name])) {
             if (!$this->getDSN()) throw new ManjuException("No DSN provided for $name connection.");
@@ -112,16 +115,7 @@ class Connection {
      */
     public function setActive() {
         if (!isset(Facade::$toolboxes[$this->getName()])) ORM::addConnection($this);
-
         return Facade::selectDatabase($this->getName(), true);
-
-        /* if (Facade::selectDatabase($this->getName(), true)) {
-          if (Facade:: testConnection() === false) {
-          throw new ManjuException("Cannot connect to database on connection " . $this->getName());
-          }
-          return true;
-          }
-          return false; */
     }
 
     /**
@@ -129,21 +123,25 @@ class Connection {
      * @return bool
      */
     public function testConnection(): bool {
+        if (is_bool($this->can_connect)) return $this->can_connect;
         if ($toolbox = $this->getToolbox()) {
-            $toolbox = Facade::$toolboxes[$this->getName()];
             $database = $toolbox
                     ->getDatabaseAdapter()
                     ->getDatabase();
             try {
                 @$database->connect();
             } catch (\Exception $e) { $e->getCode(); }
-            $val = $database->isConnected();
+            $this->can_connect = $database->isConnected();
             if (!$this->isActive()) $database->close();
-            return $val;
+            return $this->can_connect;
         }
         return false;
     }
 
+    /**
+     * Checks if Connection is selected in RedBean
+     * @return bool
+     */
     public function isActive(): bool {
         return Facade::$currentDB == $this->name;
     }

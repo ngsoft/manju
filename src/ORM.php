@@ -93,9 +93,7 @@ final class ORM {
      */
     public static function addConnection(Connection $connection, bool $selected = false) {
         $name = $connection->getName();
-        if (!in_array($connection, self::$connections)) {
-            self::$connections[$name] = $connection;
-        }
+        if (!in_array($connection, self::$connections)) self::$connections[$name] = $connection;
         if (isset(Facade::$toolboxes[$name])) throw new ManjuException("Connection $name already exists.");
         if ($connection->addToRedBean() and $selected) $connection->setActive();
     }
@@ -112,6 +110,17 @@ final class ORM {
             return self::$connections[Facade::$currentDB];
         }
         return null;
+    }
+
+    /**
+     * Checks if RedBean has an active connection and can connect to it
+     * @return bool
+     */
+    public static function canConnect(): bool {
+        if ($connection = self::getActiveConnection()) {
+            return $connection->testConnection();
+        }
+        return false;
     }
 
     ///////////////////////////////// Model Manager  /////////////////////////////////
