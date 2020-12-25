@@ -112,11 +112,34 @@ class Connection {
      */
     public function setActive() {
         if (!isset(Facade::$toolboxes[$this->getName()])) ORM::addConnection($this);
-        if (Facade::selectDatabase($this->getName(), true)) {
-            if (Facade:: testConnection() === false) {
-                throw new ManjuException("Cannot connect to database on connection " . $this->getName());
-            }
-            return true;
+
+        return Facade::selectDatabase($this->getName(), true);
+
+        /* if (Facade::selectDatabase($this->getName(), true)) {
+          if (Facade:: testConnection() === false) {
+          throw new ManjuException("Cannot connect to database on connection " . $this->getName());
+          }
+          return true;
+          }
+          return false; */
+    }
+
+    /**
+     * Test the database connection
+     * @return bool
+     */
+    public function testConnection(): bool {
+        if ($toolbox = $this->getToolbox()) {
+            $toolbox = Facade::$toolboxes[$this->getName()];
+            $database = $toolbox
+                    ->getDatabaseAdapter()
+                    ->getDatabase();
+            try {
+                @$database->connect();
+            } catch (\Exception $e) { $e->getCode(); }
+            $val = $database->isConnected();
+            if (!$this->isActive()) $database->close();
+            return $val;
         }
         return false;
     }
