@@ -2,8 +2,6 @@
 !.gitignore
 !.phan
 !composer.json
-*.lock
-*.bak
-/tests/
+composer.lock
 /nbproject/
 /vendor/

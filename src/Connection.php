@@ -96,6 +96,7 @@ class Connection {
 
     /**
      * Adds Connection to RedBeanPHP
+     * @suppress PhanTypeMismatchArgumentNullable
      * @internal
      * @return bool
      */
@@ -130,10 +131,10 @@ class Connection {
                 try {
                     @$database->connect();
                 } catch (\Exception $e) { $e->getCode(); }
-                $this->can_connect = $database->isConnected();
+                $this->can_connect = $database->isConnected() === true;
                 if (!$this->isActive()) $database->close();
+                return $this->can_connect;
             }
-            return $this->can_connect;
         }
 
         return false;

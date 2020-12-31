@@ -250,6 +250,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
     /**
      * Get all ReflectionProperties from Model
      * @param Model $model
+     * @suppress PhanPossiblyInfiniteLoop
      */
     private static function getReflections(Model $model) {
         $refl = new \ReflectionClass($model);
@@ -270,7 +271,7 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
                         }
                     }
                 }
-            } while ($refl = $refl->getParentClass());
+            } while (($refl = $refl->getParentClass()) !== false);
         } catch (ReflectionException $e) { $e->getCode(); }
 
         return $result;
@@ -438,14 +439,6 @@ final class BeanHelper extends SimpleFacadeBeanHelper {
             }
         }
         return parent::getModelForBean($bean);
-    }
-
-    ///////////////////////////////// Initialisation  /////////////////////////////////
-
-    public function __construct() {
-        if (!(Facade::getRedBean()->getBeanHelper() instanceof self)) {
-            Facade::getRedBean()->setBeanHelper($this);
-        }
     }
 
 }

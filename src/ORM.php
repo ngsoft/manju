@@ -145,10 +145,13 @@ final class ORM {
 
     /**
      * Initialize Bean Helper
+     * @staticvar type $helper
      */
     private static function initializeBeanHelper() {
+        static $helper;
+        if (!($helper instanceof BeanHelper)) $helper = new BeanHelper();
         if (!(Facade::getRedBean()->getBeanHelper() instanceof BeanHelper)) {
-            (new BeanHelper());
+            Facade::getRedBean()->setBeanHelper($helper);
         }
     }
 

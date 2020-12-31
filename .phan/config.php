@@ -20,9 +20,7 @@ return [
     // your application should be included in this list.
     'directory_list' => [
         'src',
-        //'vendor/psr',
-        'vendor/gabordemooij/redbean',
-        'vendor/psr',
+        'vendor',
     //'vendor/kdyby/parse-use-statements/src'
     ],
     // A directory list that defines files that will be excluded
@@ -64,6 +62,6 @@ return [
         'PhanPluginDescriptionlessCommentOnPrivateMethod',
         // TODO: Fix edge cases in --automatic-fix for PhanPluginRedundantClosureComment
         'PhanPluginRedundantClosureComment',
-        'PhanTypeInstantiateTraitStaticOrSelf'
+        'PhanTypeInstantiateTraitStaticOrSelf',
     ]
 ];
