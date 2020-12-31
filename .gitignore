@@ -1,7 +1,6 @@
 .*
 !.gitignore
 !.phan
-!composer.json
 composer.lock
 /nbproject/
 /vendor/
