@@ -308,7 +308,7 @@ abstract class Model extends SimpleModel implements Countable, IteratorAggregate
 
     /**
      * Set Many to one related Model
-     * @param Model$model
+     * @param Model $model
      * @return static
      */
     final public function setListOwner(Model $model) {
