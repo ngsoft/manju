@@ -1,29 +1,36 @@
 {
-    "name": "manju/orm",
-    "description": "Manju ORM Based on RedBeanPHP, improving the SimpleModel",
-    "keywords": ["orm", "redbean", "database", "sql", "mysql", "model"],
+    "name": "ngsoft/manju",
+    "description": "Manju ORM on top of RedBeanPHP",
+    "keywords": [
+        "orm", "redbean", "database", "sql", "mysql", "model"
+    ],
     "homepage": "https://github.com/ngsoft/manju",
     "license": "MIT",
-    "authors": [{
+    "authors": [
+        {
             "name": "Aymeric Anger",
             "role": "Developer",
             "homepage": "https://github.com/ngsoft"
-        }],
+        }
+    ],
     "require-dev": {
-        "psr/log": "^1.0",
-        "psr/cache": "^1.0",
+
+        "ngsoft/tools": "^2",
+        "ngsoft/annotations": "^1",
+
+        "ngsoft/cache": "^1",
         "psr/container": "^1.0"
     },
     "require": {
         "php": ">=7.4",
-        "gabordemooij/redbean": "^5.6",
-        "symfony/polyfill-mbstring": "^1.20"
+        "gabordemooij/redbean": ">=5.6"
+
     },
     "autoload": {
         "psr-4": {
             "Manju\\": "src/"
         },
-        "files": ["src/functions.php"]
+        "files": []
     },
     "minimum-stability": "dev",
     "prefer-stable": true
