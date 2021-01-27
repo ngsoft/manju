@@ -1,5 +1,5 @@
 {
-    "name": "ngsoft/manju",
+    "name": "manju/orm",
     "description": "Manju ORM Based on RedBeanPHP, improving the SimpleModel",
     "keywords": ["orm", "redbean", "database", "sql", "mysql", "model"],
     "homepage": "https://github.com/ngsoft/manju",
