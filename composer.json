@@ -2,7 +2,7 @@
     "name": "ngsoft/manju",
     "description": "Manju ORM on top of RedBeanPHP",
     "keywords": [
-        "orm", "redbean", "database", "sql", "mysql", "model"
+        "orm", "redbean", "database", "sql", "mysql", "model", "entity"
     ],
     "homepage": "https://github.com/ngsoft/manju",
     "license": "MIT",
@@ -14,23 +14,24 @@
         }
     ],
     "require-dev": {
-
-        "ngsoft/tools": "^2",
-        "ngsoft/annotations": "^1",
-
         "ngsoft/cache": "^1",
-        "psr/container": "^1.0"
+        "psr/container": "^1.0",
+        "symfony/event-dispatcher": "^5.3",
+        "psr/log": "^1.0"
     },
     "require": {
         "php": ">=7.4",
-        "gabordemooij/redbean": ">=5.6"
-
+        "gabordemooij/redbean": ">=5.7",
+        "ngsoft/tools": "^2",
+        "ngsoft/annotations": "^1"
     },
     "autoload": {
         "psr-4": {
-            "Manju\\": "src/"
+            "NGSOFT\\Manju\\": "src/"
         },
-        "files": []
+        "files": [
+            "src/bootstrap.php"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
