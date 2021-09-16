@@ -20,7 +20,7 @@ abstract class ORMEvent extends StoppableEvent {
     /**
      * Called when event is dispatched
      */
-    protected function onEvent(): void {
+    public function onEvent(): void {
         $class = get_class($this);
         $method = array_search($class, Fuse::FUSE_EVENTS);
 
@@ -54,9 +54,7 @@ abstract class ORMEvent extends StoppableEvent {
             Entity $entity = null
     ) {
         $this->bean = $bean;
-        if ($this->entity = $entity) {
-            $this->onEvent();
-        }
+        $this->entity = $entity;
     }
 
 }

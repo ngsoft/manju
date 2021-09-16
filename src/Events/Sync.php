@@ -6,7 +6,7 @@ namespace NGSOFT\ORM\Events;
 
 class Sync extends ORMEvent {
 
-    protected function onEvent(): void {
+    public function onEvent(): void {
 
         // todo: sync bean with entity
 

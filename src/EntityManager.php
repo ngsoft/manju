@@ -32,6 +32,12 @@ final class EntityManager {
         if (is_null($this->eventListener)) {
             //symphony event dispatcher compatibiliy
             $this->eventListener = $eventDispatcher instanceof SymfonyEventDispatcherInterface ? $eventDispatcher : new Fuse();
+            // register Listeners
+            foreach (Fuse::FUSE_EVENTS as $eventType) {
+                $this->eventListener->addListener($eventType, function (ORMEvent $event) {
+                    $event->onEvent();
+                }, 10);
+            }
         }
     }
 
