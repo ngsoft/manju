@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
-use RedBeanPHP\OODBBean;
+use NGSOFT\ORM\Events\ORMEvent,
+    RedBeanPHP\OODBBean;
 
 class Bean extends OODBBean {
 
@@ -20,21 +21,18 @@ class Bean extends OODBBean {
     public function __call($method, $args) {
 
         // intercept fuse Events but only if registered entity
-        if (in_array($method, array('update', 'open', 'delete', 'after_delete', 'after_update', 'dispense'), TRUE)) {
-
-            $entity = $this->getEntity();
-            if ($entity instanceof Entity) {
-
-                $eventClass = sprintf('\\NGSOFT\\Manju\\Events\\%s', ucfirst($method));
-                if (class_exists($eventClass)) {
-                    $event = new $eventClass($this, $entity);
-                }
-
-
-
-
-                return null;
+        if (
+                in_array($method, array('update', 'open', 'delete', 'after_delete', 'after_update', 'dispense'), TRUE) and
+                ($entity = $this->getEntity()) instanceof Entity
+        ) {
+            $eventClass = ORMEvent::FUSE_EVENTS[$method];
+            $event = new $eventClass($this, $entity);
+            // keep old behaviour
+            if (method_exists($entity, $method)) {
+                $entity->$method();
             }
+
+            return null;
         }
 
         parent::__call($method, $args);
