@@ -20,7 +20,7 @@ abstract class ORMEvent extends StoppableEvent {
     /**
      * Called when event is dispatched
      */
-    private function onEvent(): void {
+    protected function onEvent(): void {
         $class = get_class($this);
         $method = array_search($class, Fuse::FUSE_EVENTS);
 

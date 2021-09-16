@@ -42,7 +42,8 @@ class Bean extends OODBBean {
             $events = [];
 
             if (in_array($eventClass, [Open::class, Update::class, AfterUpdate::class])) {
-                $events[] = new Load($this, $this->getEntity());
+                //sync Entity with Bean
+                $events[] = new Sync($this, $this->getEntity());
             }
 
             $events[] = new $eventClass($this, $entity);

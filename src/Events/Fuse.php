@@ -21,7 +21,7 @@ final class Fuse implements ListenerProviderInterface {
         'after_update' => AfterUpdate::class,
         'dispense' => Dispense::class,
         'validate' => Validate::class,
-        'loadEntity' => Load::class,
+        'sync' => Sync::class,
     ];
 
     /** @var array */

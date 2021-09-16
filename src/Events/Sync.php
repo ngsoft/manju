@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace NGSOFT\ORM\Events;
 
-class Update extends ORMEvent {
+class Sync extends ORMEvent {
 
     protected function onEvent(): void {
-        // todo: convert scalar types to be written in the database
 
+        // todo: sync bean with entity
 
 
         parent::onEvent();
