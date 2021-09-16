@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
-use NGSOFT\Events\EventListener;
+use NGSOFT\{
+    Events\EventDispatcher, ORM\Events\Fuse
+};
 use Psr\EventDispatcher\{
     EventDispatcherInterface, ListenerProviderInterface
 };
@@ -20,16 +22,6 @@ final class EntityManager {
     private $eventDispatcher;
 
     /**
-     * Set Event Listener
-     * @param ListenerProviderInterface $eventListener
-     * @return static
-     */
-    public function setEventListener(ListenerProviderInterface $eventListener): self {
-        $this->eventListener = $eventListener;
-        return $this;
-    }
-
-    /**
      * Set Event Dispatcher
      * @param EventDispatcherInterface $eventDispatcher
      * @return static
@@ -41,13 +33,16 @@ final class EntityManager {
 
     /**  @return ListenerProviderInterface */
     public function getEventListener(): ListenerProviderInterface {
-        if (is_null($this->eventListener)) $this->setEventListener(new EventListener());
         return $this->eventListener;
     }
 
     /** @return EventDispatcherInterface */
     public function getEventDispatcher(): EventDispatcherInterface {
-        if (is_null($this->eventDispatcher)) $this->setEventDispatcher(new \NGSOFT\Events\EventDispatcher($this->getEventListener()));
+        if (is_null($this->eventDispatcher)) {
+            $dispatcher = new EventDispatcher();
+            $dispatcher->setEventListener(new Fuse($dispatcher));
+            $this->setEventDispatcher($dispatcher);
+        }
         return $this->eventDispatcher;
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
-use NGSOFT\ORM\Events\ORMEvent,
+use NGSOFT\ORM\Events\Fuse,
     RedBeanPHP\OODBBean;
 
 class Bean extends OODBBean {
@@ -25,12 +25,16 @@ class Bean extends OODBBean {
                 in_array($method, array('update', 'open', 'delete', 'after_delete', 'after_update', 'dispense'), TRUE) and
                 ($entity = $this->getEntity()) instanceof Entity
         ) {
-            $eventClass = ORMEvent::FUSE_EVENTS[$method];
+            $eventClass = Fuse::FUSE_EVENTS[$method];
             $event = new $eventClass($this, $entity);
             // keep old behaviour
             if (method_exists($entity, $method)) {
                 $entity->$method();
             }
+            //dispatches Event
+
+
+
 
             return null;
         }

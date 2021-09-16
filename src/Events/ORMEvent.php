@@ -11,15 +11,6 @@ use RedBeanPHP\OODBBean;
 
 abstract class ORMEvent extends StoppableEvent {
 
-    const FUSE_EVENTS = [
-        'update' => Update::class,
-        'open' => Open::class,
-        'delete' => Delete::class,
-        'after_delete' => AfterDelete::class,
-        'after_update' => AfterUpdate::class,
-        'dispense' => Dispense::class,
-    ];
-
     /** @var Entity|null */
     private $entity;
 
