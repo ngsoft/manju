@@ -9,7 +9,7 @@ use Psr\EventDispatcher\{
 };
 
 /**
- * Simple Event Listener
+ * Basic Event Listener (if none provided)
  */
 final class Fuse implements ListenerProviderInterface {
 
