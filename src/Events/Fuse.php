@@ -20,18 +20,15 @@ final class Fuse implements ListenerProviderInterface {
         'after_delete' => AfterDelete::class,
         'after_update' => AfterUpdate::class,
         'dispense' => Dispense::class,
+        'validate' => Validate::class,
+        'loadEntity' => Load::class,
     ];
-
-    private static $dispatchers = [];
 
     /** @var array */
     private $listeners = [];
 
     /** @var callable[] */
     private $sorted = [];
-
-    /** @var ListenerProviderInterface */
-    private $listener;
 
     /** {@inheritdoc} */
     public function getListenersForEvent(object $event): iterable {
@@ -40,31 +37,6 @@ final class Fuse implements ListenerProviderInterface {
                 foreach ($listeners as $listener) {
                     yield $listener;
                 }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param EventDispatcherInterface $dispatcher
-     */
-    public function __construct(
-            EventDispatcherInterface $dispatcher
-    ) {
-        if (in_array($dispatcher, self::$dispatchers, true)) return;
-        self::$dispatchers[] = $dispatcher;
-        if (count(self::$dispatchers) == 1) {
-            //register basic fuse Events
-            foreach (self::FUSE_EVENTS as $method => $eventType) {
-                $this->addListener($eventType, function (ORMEvent $event) use ($method) {
-                    $class = get_class($event);
-                    if (
-                            $entity = $event->getEntity() and
-                            method_exists($entity, $method)
-                    ) {
-                        $entity->$method();
-                    }
-                });
             }
         }
     }

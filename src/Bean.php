@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
-use NGSOFT\ORM\Events\Fuse,
-    RedBeanPHP\OODBBean;
+use NGSOFT\ORM\Events\{
+    AfterUpdate, Fuse, Load, Open, Update
+};
+use RedBeanPHP\OODBBean;
 
 class Bean extends OODBBean {
+
+    /** @var EntityManager */
+    protected $entityManager;
 
     /**
      * Get Related Entity
@@ -18,6 +23,14 @@ class Bean extends OODBBean {
         return $entity instanceof Entity ? $entity : null;
     }
 
+    public function getEntityManager(): EntityManager {
+        return $this->entityManager;
+    }
+
+    public function setEntityManager(EntityManager $entityManager): void {
+        $this->entityManager = $entityManager;
+    }
+
     public function __call($method, $args) {
 
         // intercept fuse Events but only if registered entity
@@ -26,16 +39,20 @@ class Bean extends OODBBean {
                 ($entity = $this->getEntity()) instanceof Entity
         ) {
             $eventClass = Fuse::FUSE_EVENTS[$method];
-            $event = new $eventClass($this, $entity);
-            // keep old behaviour
-            if (method_exists($entity, $method)) {
-                $entity->$method();
+            $events = [];
+
+            if (in_array($eventClass, [Open::class, Update::class, AfterUpdate::class])) {
+                $events[] = new Load($this, $this->getEntity());
             }
-            //dispatches Event
 
-
-
-
+            $events[] = new $eventClass($this, $entity);
+            //dispatches Events
+            foreach ($events as $event) {
+                $this
+                        ->getEntityManager()
+                        ->getEventDispatcher()
+                        ->dispatch($event);
+            }
             return null;
         }
 

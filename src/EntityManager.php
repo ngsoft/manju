@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace NGSOFT\Manju;
 
 use NGSOFT\{
-    Events\EventDispatcher, ORM\Events\Fuse
+    Events\EventDispatcher, ORM\Events\Fuse, ORM\Events\ORMEvent
 };
 use Psr\EventDispatcher\{
     EventDispatcherInterface, ListenerProviderInterface
 };
+use Symfony\Component\EventDispatcher\EventDispatcherInterface as SymfonyEventDispatcherInterface;
 
 final class EntityManager {
 
@@ -24,11 +25,14 @@ final class EntityManager {
     /**
      * Set Event Dispatcher
      * @param EventDispatcherInterface $eventDispatcher
-     * @return static
+     * @return void
      */
-    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): self {
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): void {
         $this->eventDispatcher = $eventDispatcher;
-        return $this;
+        if (is_null($this->eventListener)) {
+            //symphony event dispatcher compatibiliy
+            $this->eventListener = $eventDispatcher instanceof SymfonyEventDispatcherInterface ? $eventDispatcher : new Fuse();
+        }
     }
 
     /**  @return ListenerProviderInterface */
@@ -39,9 +43,7 @@ final class EntityManager {
     /** @return EventDispatcherInterface */
     public function getEventDispatcher(): EventDispatcherInterface {
         if (is_null($this->eventDispatcher)) {
-            $dispatcher = new EventDispatcher();
-            $dispatcher->setEventListener(new Fuse($dispatcher));
-            $this->setEventDispatcher($dispatcher);
+            $this->setEventDispatcher(new EventDispatcher());
         }
         return $this->eventDispatcher;
     }
