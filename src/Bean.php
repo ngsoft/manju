@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NGSOFT\Manju;
 
 use NGSOFT\ORM\Events\{
-    AfterUpdate, Fuse, Load, Open, Update
+    AfterUpdate, Fuse, Open, Sync, Update, Validate
 };
 use RedBeanPHP\OODBBean;
 
@@ -31,6 +31,7 @@ class Bean extends OODBBean {
         $this->entityManager = $entityManager;
     }
 
+    /** {@inheritdoc} */
     public function __call($method, $args) {
 
         // intercept fuse Events but only if registered entity
@@ -41,7 +42,13 @@ class Bean extends OODBBean {
             $eventClass = Fuse::FUSE_EVENTS[$method];
             $events = [];
 
-            if (in_array($eventClass, [Open::class, Update::class, AfterUpdate::class])) {
+            if (in_array($eventClass, [Update::class])) {
+                // validate Entity values
+                $events[] = new Validate($this, $this->getEntity());
+            }
+
+
+            if (in_array($eventClass, [Open::class, AfterUpdate::class])) {
                 //sync Entity with Bean
                 $events[] = new Sync($this, $this->getEntity());
             }
@@ -54,6 +61,7 @@ class Bean extends OODBBean {
                         ->getEventDispatcher()
                         ->dispatch($event);
             }
+            // no need to execute RedBean code as a listener will call the SimpleModel method if it exists.
             return null;
         }
 
