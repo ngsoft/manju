@@ -46,8 +46,6 @@ final class EntityManager {
         $this->eventListener = $eventListener;
         $this->logger = $logger;
         $this->cachePool = $cachePool;
-
-        if (is_null(self::$instance)) self::$instance = $this;
     }
 
     /**
