@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju\Connection;
 
-use InvalidArgumentException,
-    NGSOFT\Traits\UnionType;
+use InvalidArgumentException;
+use NGSOFT\{
+    Manju\BeanHelper, Traits\UnionType
+};
 use RedBeanPHP\{
     R, ToolBox
 };
@@ -150,10 +152,16 @@ abstract class DSN implements Stringable {
      */
     public function getToolbox(): ?ToolBox {
         $name = $this->getName();
-        if (!isset(R::$toolboxes[$name])) {
-            R::addDatabase($name, $this->getDSN(), $this->username, $this->password);
-        }
         $toolbox = R::$toolboxes[$name] ?? null;
+        if (is_null($toolbox)) {
+            R::addDatabase($name, $this->getDSN(), $this->username, $this->password);
+
+            if ($toolbox = R::$toolboxes[$name] ?? null) {
+                /** @var ToolBox $toolbox */
+                $toolbox->getRedBean()->setBeanHelper(BeanHelper::create());
+            }
+        }
+
         if ($toolbox !== null and empty(R::$currentDB)) {
             R::selectDatabase($this->getName());
         }
