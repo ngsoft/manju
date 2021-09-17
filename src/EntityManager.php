@@ -74,10 +74,4 @@ final class EntityManager {
         $this->cachePool = $cachePool;
     }
 
-    public function load(string $type, int $id): Entity {
-
-
-        return new Entity();
-    }
-
 }
