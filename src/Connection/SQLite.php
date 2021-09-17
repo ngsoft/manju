@@ -8,9 +8,6 @@ class SQLite extends DSN {
 
     const DEFAULT_PATH = ':memory:';
 
-    /** @var string */
-    private $path;
-
     protected function getDBType(): string {
         return 'SQLite';
     }
