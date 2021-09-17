@@ -33,7 +33,7 @@ abstract class FuseEvent extends StoppableEvent {
      */
     public function onEvent(): void {
         $class = get_class($this);
-        $method = array_search($class, FuseEvent::FUSE_EVENTS);
+        $method = array_search($class, self::FUSE_EVENTS);
 
         if (
                 is_string($method) and

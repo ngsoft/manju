@@ -7,8 +7,8 @@ namespace NGSOFT\Manju;
 use NGSOFT\{
     Events\EventDispatcher, Manju\Events\FuseEvent
 };
-use Psr\EventDispatcher\{
-    EventDispatcherInterface, ListenerProviderInterface
+use Psr\{
+    Cache\CacheItemPoolInterface, EventDispatcher\EventDispatcherInterface, EventDispatcher\ListenerProviderInterface
 };
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as SymfonyEventDispatcherInterface;
 
@@ -21,6 +21,9 @@ final class EntityManager {
 
     /** @var EventDispatcherInterface */
     private $eventDispatcher;
+
+    /** @var CacheItemPoolInterface */
+    private $cachePool;
 
     /**
      * Set Event Dispatcher
@@ -41,8 +44,8 @@ final class EntityManager {
         }
     }
 
-    /**  @return ListenerProviderInterface */
-    public function getEventListener(): ListenerProviderInterface {
+    /**  @return ListenerProviderInterface|null */
+    public function getEventListener(): ?ListenerProviderInterface {
         return $this->eventListener;
     }
 
@@ -52,6 +55,23 @@ final class EntityManager {
             $this->setEventDispatcher(new EventDispatcher());
         }
         return $this->eventDispatcher;
+    }
+
+    /**
+     * Get Cache Pool
+     * @return CacheItemPoolInterface|null
+     */
+    public function getCachePool(): ?CacheItemPoolInterface {
+        return $this->cachePool;
+    }
+
+    /**
+     * Set The CachePool
+     * @param CacheItemPoolInterface $cachePool
+     * @return void
+     */
+    public function setCachePool(CacheItemPoolInterface $cachePool): void {
+        $this->cachePool = $cachePool;
     }
 
     public function load(string $type, int $id): Entity {

@@ -8,6 +8,7 @@ use Psr\EventDispatcher\ListenerProviderInterface;
 
 /**
  * Basic Event Listener (if none provided)
+ * Uses the same methods as Symfony Event Dispatcher
  */
 final class EventListener implements ListenerProviderInterface {
 
