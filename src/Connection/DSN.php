@@ -21,14 +21,30 @@ abstract class DSN implements Stringable {
     /** @var ?string */
     protected $password;
 
-    /** @var bool */
-    protected $auth = true;
-
     /** @var array<string,string> */
     protected $params = [];
 
     /** @var ?string */
     protected $DSN;
+
+    /** @var string */
+    protected $name;
+
+    ////////////////////////////   Utils   ////////////////////////////
+
+    /**
+     * Generates a uuid V4
+     * @link https://stackoverflow.com/questions/2040240/php-function-to-generate-v4-uuid
+     * @return string
+     */
+    private function generate_uuid_v4(): string {
+        if (function_exists('com_create_guid') === true) return trim(com_create_guid(), '{}');
+
+        $data = openssl_random_pseudo_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // set version to 0100
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
 
     ////////////////////////////   Abstract Methods   ////////////////////////////
 
@@ -50,6 +66,15 @@ abstract class DSN implements Stringable {
     abstract protected function getDBType(): string;
 
     ////////////////////////////   Getters/Setters   ////////////////////////////
+
+    /**
+     * Get Connection Name
+     * @return string
+     */
+    public function getName(): string {
+        if (is_null($this->name)) $this->name = $this->generate_uuid_v4();
+        return $this->name;
+    }
 
     /**
      * Get the DSN
