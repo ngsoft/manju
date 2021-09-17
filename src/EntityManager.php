@@ -4,26 +4,71 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
+use Fig\Cache\Memory\MemoryPool;
 use NGSOFT\{
     Events\EventDispatcher, Manju\Events\FuseEvent
 };
 use Psr\{
-    Cache\CacheItemPoolInterface, EventDispatcher\EventDispatcherInterface, EventDispatcher\ListenerProviderInterface
+    Cache\CacheItemPoolInterface, EventDispatcher\EventDispatcherInterface, EventDispatcher\ListenerProviderInterface, Log\LoggerInterface, Log\NullLogger
 };
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as SymfonyEventDispatcherInterface;
 
 final class EntityManager {
 
-    const VERSION = '3.0';
-
-    /** @var ListenerProviderInterface */
+    /** @var ?ListenerProviderInterface */
     private $eventListener;
 
-    /** @var EventDispatcherInterface */
+    /** @var ?EventDispatcherInterface */
     private $eventDispatcher;
 
-    /** @var CacheItemPoolInterface */
+    /** @var ?CacheItemPoolInterface */
     private $cachePool;
+
+    /** @var ?LoggerInterface */
+    private $logger;
+
+    ////////////////////////////   Initialisation   ////////////////////////////
+
+    /**
+     * @param ?EventDispatcherInterface $eventDispatcher
+     * @param ?ListenerProviderInterface $eventListener
+     * @param ?LoggerInterface $logger
+     * @param ?CacheItemPoolInterface $cachePool
+     */
+    public function __construct(
+            EventDispatcherInterface $eventDispatcher = null,
+            ListenerProviderInterface $eventListener = null,
+            LoggerInterface $logger = null,
+            CacheItemPoolInterface $cachePool = null
+    ) {
+
+        $this->eventDispatcher = $eventDispatcher;
+        $this->eventListener = $eventListener;
+        $this->logger = $logger;
+        $this->cachePool = $cachePool;
+
+        if (is_null(self::$instance)) self::$instance = $this;
+    }
+
+    /**
+     * Creates a new instance
+     *
+     * @param ?EventDispatcherInterface $eventDispatcher
+     * @param ?ListenerProviderInterface $eventListener
+     * @param ?LoggerInterface $logger
+     * @param ?CacheItemPoolInterface $cachePool
+     * @return static
+     */
+    public static function create(
+            EventDispatcherInterface $eventDispatcher = null,
+            ListenerProviderInterface $eventListener = null,
+            LoggerInterface $logger = null,
+            CacheItemPoolInterface $cachePool = null
+    ): self {
+        return new static($eventDispatcher, $eventListener, $logger, $cachePool);
+    }
+
+    ////////////////////////////   Getters/Setters   ////////////////////////////
 
     /**
      * Set Event Dispatcher
@@ -59,9 +104,14 @@ final class EntityManager {
 
     /**
      * Get Cache Pool
-     * @return CacheItemPoolInterface|null
+     * @return CacheItemPoolInterface
      */
-    public function getCachePool(): ?CacheItemPoolInterface {
+    public function getCachePool(): CacheItemPoolInterface {
+
+        if (is_null($this->cachePool)) {
+            $this->setCachePool(new MemoryPool());
+        }
+
         return $this->cachePool;
     }
 
@@ -72,6 +122,28 @@ final class EntityManager {
      */
     public function setCachePool(CacheItemPoolInterface $cachePool): void {
         $this->cachePool = $cachePool;
+    }
+
+    /**
+     * Get The Logger
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface {
+        if (is_null($this->logger)) {
+            $this->setLogger(new NullLogger());
+        }
+        return $this->logger;
+    }
+
+    /**
+     * Set the logger
+     *
+     * @param LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger): void {
+        $this->logger = $logger;
     }
 
 }

@@ -62,7 +62,7 @@ abstract class FuseEvent extends StoppableEvent {
 
     /**
      * @param OODBBean $bean
-     * @param Entity $entity
+     * @param Entity|null $entity
      */
     public function __construct(
             OODBBean $bean,
