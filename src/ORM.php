@@ -19,7 +19,7 @@ final class ORM {
     /** @var EntityManager */
     private static $entityManager;
 
-    ////////////////////////////   Getters/Setters   ////////////////////////////
+    ////////////////////////////   Getters   ////////////////////////////
 
     /**
      * Access Entity Manager
@@ -50,6 +50,8 @@ final class ORM {
     public function getEventDispatcher(): EventDispatcherInterface {
         return self::$entityManager->getEventDispatcher();
     }
+
+    ////////////////////////////   Setters   ////////////////////////////
 
     /**
      * Set configured Entity Manager
