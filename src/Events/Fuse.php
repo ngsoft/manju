@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace NGSOFT\ORM\Events;
 
-use Psr\EventDispatcher\{
-    EventDispatcherInterface, ListenerProviderInterface
-};
+use Psr\EventDispatcher\ListenerProviderInterface;
 
 /**
  * Basic Event Listener (if none provided)

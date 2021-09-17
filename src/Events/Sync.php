@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NGSOFT\ORM\Events;
 
-class Sync extends ORMEvent {
+class Sync extends FuseEvent {
 
     public function onEvent(): void {
 

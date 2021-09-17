@@ -39,7 +39,7 @@ class Bean extends OODBBean {
                 in_array($method, array('update', 'open', 'delete', 'after_delete', 'after_update', 'dispense'), TRUE) and
                 ($entity = $this->getEntity()) instanceof Entity
         ) {
-            $eventClass = Fuse::FUSE_EVENTS[$method];
+            $eventClass = \NGSOFT\ORM\Events\FuseEvent::FUSE_EVENTS[$method];
             $events = [];
 
             if (in_array($eventClass, [Update::class])) {
@@ -65,7 +65,7 @@ class Bean extends OODBBean {
             return null;
         }
 
-        parent::__call($method, $args);
+        return parent::__call($method, $args);
     }
 
 }

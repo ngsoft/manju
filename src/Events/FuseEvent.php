@@ -9,7 +9,18 @@ use NGSOFT\{
 };
 use RedBeanPHP\OODBBean;
 
-abstract class ORMEvent extends StoppableEvent {
+abstract class FuseEvent extends StoppableEvent {
+
+    const FUSE_EVENTS = [
+        'update' => Update::class,
+        'open' => Open::class,
+        'delete' => Delete::class,
+        'after_delete' => AfterDelete::class,
+        'after_update' => AfterUpdate::class,
+        'dispense' => Dispense::class,
+        'validate' => Validate::class,
+        'sync' => Sync::class,
+    ];
 
     /** @var Entity|null */
     private $entity;
@@ -22,7 +33,7 @@ abstract class ORMEvent extends StoppableEvent {
      */
     public function onEvent(): void {
         $class = get_class($this);
-        $method = array_search($class, Fuse::FUSE_EVENTS);
+        $method = array_search($class, FuseEvent::FUSE_EVENTS);
 
         if (
                 is_string($method) and

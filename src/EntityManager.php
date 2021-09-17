@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NGSOFT\Manju;
 
 use NGSOFT\{
-    Events\EventDispatcher, ORM\Events\Fuse, ORM\Events\ORMEvent
+    Events\EventDispatcher, ORM\Events\Fuse, ORM\Events\FuseEvent
 };
 use Psr\EventDispatcher\{
     EventDispatcherInterface, ListenerProviderInterface
@@ -33,8 +33,8 @@ final class EntityManager {
             //symphony event dispatcher compatibiliy
             $this->eventListener = $eventDispatcher instanceof SymfonyEventDispatcherInterface ? $eventDispatcher : new Fuse();
             // register Listeners
-            foreach (Fuse::FUSE_EVENTS as $eventType) {
-                $this->eventListener->addListener($eventType, function (ORMEvent $event) {
+            foreach (FuseEvent::FUSE_EVENTS as $eventType) {
+                $this->eventListener->addListener($eventType, function (FuseEvent $event) {
                     $event->onEvent();
                 }, 10);
             }

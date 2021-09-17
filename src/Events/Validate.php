@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace NGSOFT\ORM\Events;
 
-class Validate extends ORMEvent {
+class Validate extends FuseEvent {
 
 }
