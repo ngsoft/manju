@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace NGSOFT\Manju\Connection;
 
 use InvalidArgumentException,
-    NGSOFT\Traits\UnionType,
-    Stringable;
+    NGSOFT\Traits\UnionType;
+use RedBeanPHP\{
+    R, ToolBox
+};
+use Stringable;
 
 /**
  * DSN Builder
@@ -139,6 +142,63 @@ abstract class DSN implements Stringable {
         return $this;
     }
 
+    ////////////////////////////   RedBean Binding   ////////////////////////////
+
+    /**
+     * Get RedBean ToolBox for this Connection
+     * @return ?ToolBox
+     */
+    public function getToolbox(): ?ToolBox {
+        $name = $this->getName();
+        if (!isset(R::$toolboxes[$name])) {
+            R::addDatabase($name, $this->getDSN(), $this->username, $this->password);
+        }
+        $toolbox = R::$toolboxes[$name] ?? null;
+        if ($toolbox !== null and empty(R::$currentDB)) {
+            R::selectDatabase($this->getName());
+        }
+        return $toolbox;
+    }
+
+    /**
+     * Set Connection as active into RedBean
+     * @return bool
+     */
+    public function setActive(): bool {
+        if ($this->getToolbox()) {
+            return R::selectDatabase($this->getName());
+        }
+        return false;
+    }
+
+    /**
+     * Check if connection is active into Redbean
+     * @return bool
+     */
+    public function isActive(): bool {
+        return R::$currentDB == $this->getName();
+    }
+
+    /**
+     * Checks if connection is valid
+     * @return bool
+     */
+    public function canConnect(): bool {
+        $return = false;
+        if ($toolbox = $this->getToolbox()) {
+            $database = $toolbox
+                    ->getDatabaseAdapter()
+                    ->getDatabase();
+            try {
+                @$database->connect();
+            } catch (\Exception $error) { $error->getCode(); }
+            $return = $database->isConnected();
+            if (!$this->isActive()) $database->close();
+        }
+
+        return $return;
+    }
+
     ////////////////////////////   Magic Methods   ////////////////////////////
 
     /** {@inheritdoc} */
@@ -149,7 +209,7 @@ abstract class DSN implements Stringable {
     /** {@inheritdoc} */
     public function __debugInfo() {
         return [
-            $this->getPrefix() => $this->params
+            'dsn' => $this->getDSN()
         ];
     }
 
