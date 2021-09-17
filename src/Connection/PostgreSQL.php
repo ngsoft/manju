@@ -6,14 +6,17 @@ namespace NGSOFT\Manju\Connection;
 
 class PostgreSQL extends DSN {
 
+    /** {@inheritdoc} */
     protected function getDBType(): string {
         return 'PostgreSQL';
     }
 
+    /** {@inheritdoc} */
     protected function getPrefix(): string {
         return 'pgsql';
     }
 
+    /** {@inheritdoc} */
     protected function getValidParams(): array {
         return [
             'host',

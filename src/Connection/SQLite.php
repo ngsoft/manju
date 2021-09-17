@@ -8,15 +8,18 @@ class SQLite extends DSN {
 
     const DEFAULT_PATH = ':memory:';
 
+    /** {@inheritdoc} */
     protected function getDBType(): string {
         return 'SQLite';
     }
 
+    /** {@inheritdoc} */
     protected function getPrefix(): string {
 
         return 'sqlite';
     }
 
+    /** {@inheritdoc} */
     protected function getValidParams(): array {
         return ['path'];
     }
