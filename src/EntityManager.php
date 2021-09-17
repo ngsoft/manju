@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NGSOFT\Manju;
 
 use NGSOFT\{
-    Events\EventDispatcher, ORM\Events\FuseEvent
+    Events\EventDispatcher, Manju\Events\FuseEvent
 };
 use Psr\EventDispatcher\{
     EventDispatcherInterface, ListenerProviderInterface
