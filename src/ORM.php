@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
+use NGSOFT\Manju\Connection\{
+    DSN, SQLite
+};
 use Psr\{
     Cache\CacheItemPoolInterface, EventDispatcher\EventDispatcherInterface, EventDispatcher\ListenerProviderInterface, Log\LoggerInterface
 };
+use RedBeanPHP\ToolBox;
 
 /**
  * ORM Facade
@@ -18,6 +22,9 @@ final class ORM {
 
     /** @var EntityManager */
     private static $entityManager;
+
+    /** @var DSN */
+    private static $connection;
 
     ////////////////////////////   Getters   ////////////////////////////
 
@@ -51,6 +58,17 @@ final class ORM {
         return self::$entityManager->getEventDispatcher();
     }
 
+    /** @return DSN */
+    public static function getConnection(): DSN {
+        if (is_null(self::$connection)) self::setConnection(new SQLite());
+        return self::$connection;
+    }
+
+    /** @return ?ToolBox */
+    public static function getToolBox(): ?ToolBox {
+        return self::getConnection()->getToolbox();
+    }
+
     ////////////////////////////   Setters   ////////////////////////////
 
     /**
@@ -76,6 +94,15 @@ final class ORM {
     /** @param EventDispatcherInterface $eventDispatcher */
     public function setEventDispatcher(EventDispatcherInterface $eventDispatcher) {
         self::getEntityManager()->setEventDispatcher($eventDispatcher);
+    }
+
+    /**
+     * Set Active Connection
+     * @param DSN $connection
+     */
+    public static function setConnection(DSN $connection) {
+        self::$connection = $connection;
+        $connection->setActive();
     }
 
 }

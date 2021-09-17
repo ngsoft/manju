@@ -165,7 +165,10 @@ abstract class DSN implements Stringable {
      * @return bool
      */
     public function setActive(): bool {
-        if ($this->getToolbox()) {
+        if (
+                $this->getToolbox() and
+                !$this->isActive()
+        ) {
             return R::selectDatabase($this->getName());
         }
         return false;
