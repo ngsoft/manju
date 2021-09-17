@@ -60,6 +60,10 @@ abstract class FuseEvent extends StoppableEvent {
         return $this->bean;
     }
 
+    /**
+     * @param OODBBean $bean
+     * @param Entity $entity
+     */
     public function __construct(
             OODBBean $bean,
             Entity $entity = null
