@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NGSOFT\Manju;
 
 use NGSOFT\Manju\Events\{
-    AfterUpdate, Open, Sync, Update, Validate
+    AfterUpdate, FuseEvent, Open, Sync, Update, Validate
 };
 use RedBeanPHP\OODBBean;
 
@@ -39,7 +39,7 @@ class Bean extends OODBBean {
                 in_array($method, array('update', 'open', 'delete', 'after_delete', 'after_update', 'dispense'), TRUE) and
                 ($entity = $this->getEntity()) instanceof Entity
         ) {
-            $eventClass = \NGSOFT\ORM\Events\FuseEvent::FUSE_EVENTS[$method];
+            $eventClass = FuseEvent::FUSE_EVENTS[$method];
             $events = [];
 
             if (in_array($eventClass, [Update::class])) {
