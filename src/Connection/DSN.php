@@ -161,7 +161,7 @@ abstract class DSN implements Stringable {
                 $toolbox->getRedBean()->setBeanHelper(BeanHelper::create());
             }
         }
-
+        // set as active connection if none selected
         if ($toolbox !== null and empty(R::$currentDB)) {
             R::selectDatabase($this->getName());
         }
