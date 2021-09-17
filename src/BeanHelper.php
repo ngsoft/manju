@@ -8,7 +8,7 @@ use RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper;
 
 final class BeanHelper extends SimpleFacadeBeanHelper {
 
-    /** @var static */
+    /** @var BeanHelper */
     private static $instance;
 
     /** @return self */

@@ -6,7 +6,7 @@ namespace NGSOFT\Manju;
 
 use Fig\Cache\Memory\MemoryPool;
 use NGSOFT\{
-    Events\EventDispatcher, Manju\Events\FuseEvent
+    Events\EventDispatcher, Events\EventListener, Manju\Events\FuseEvent
 };
 use Psr\{
     Cache\CacheItemPoolInterface, EventDispatcher\EventDispatcherInterface, EventDispatcher\ListenerProviderInterface, Log\LoggerInterface, Log\NullLogger
