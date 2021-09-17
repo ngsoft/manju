@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NGSOFT\Manju;
 
-use NGSOFT\ORM\Events\{
+use NGSOFT\Manju\Events\{
     AfterUpdate, Open, Sync, Update, Validate
 };
 use RedBeanPHP\OODBBean;
