@@ -2,25 +2,14 @@
 
 declare(strict_types=1);
 
-namespace NGSOFT\ORM\Events;
+namespace NGSOFT\Manju;
 
 use Psr\EventDispatcher\ListenerProviderInterface;
 
 /**
  * Basic Event Listener (if none provided)
  */
-final class Fuse implements ListenerProviderInterface {
-
-    const FUSE_EVENTS = [
-        'update' => Update::class,
-        'open' => Open::class,
-        'delete' => Delete::class,
-        'after_delete' => AfterDelete::class,
-        'after_update' => AfterUpdate::class,
-        'dispense' => Dispense::class,
-        'validate' => Validate::class,
-        'sync' => Sync::class,
-    ];
+final class EventListener implements ListenerProviderInterface {
 
     /** @var array */
     private $listeners = [];

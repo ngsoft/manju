@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NGSOFT\ORM\Events;
+namespace NGSOFT\Manju\Events;
 
 class Update extends FuseEvent {
 
