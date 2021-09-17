@@ -91,12 +91,11 @@ abstract class DSN implements Stringable {
             $params = '';
             foreach ($this->getValidParams() as $key) {
                 if (array_key_exists($key, $this->params)) {
-                    if (!empty($params)) $params .= ';';
-                    $params .= sprintf('%s=%s', $key, $this->params[$key]);
+                    $params .= sprintf('%s=%s;', $key, $this->params[$key]);
                 }
             }
 
-            $this->DSN = sprintf('%s:%s', $this->getPrefix(), $params);
+            $this->DSN = sprintf('%s:%s', $this->getPrefix(), trim($params, ';'));
         }
 
         return $this->DSN;
@@ -220,7 +219,9 @@ abstract class DSN implements Stringable {
     /** {@inheritdoc} */
     public function __debugInfo() {
         return [
-            'dsn' => $this->getDSN()
+            'name' => $this->getName(),
+            'dsn' => $this->getDSN(),
+            'can_connect' => $this->canConnect(),
         ];
     }
 
